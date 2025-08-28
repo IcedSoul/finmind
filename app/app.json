@@ -1,0 +1,9 @@
+{
+  "name": "FinMind",
+  "displayName": "FinMind全记账",
+  "version": "1.0.0",
+  "description": "智能记账应用，支持AI识别和数据分析",
+  "main": "index.js",
+  "author": "FinMind Team",
+  "license": "MIT"
+}
