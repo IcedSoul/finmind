@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,22 +8,77 @@ import {
   RefreshControl,
   Dimensions,
 } from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
-import {useNavigation} from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import {RootState} from '@/types';
-import {formatCurrency, getMonthRange, calculateTotalAmount} from '@/utils';
-import {useSyncStatus} from '@/hooks';
+import { RootState } from '@/types';
+import { formatCurrency, getMonthRange, calculateTotalAmount } from '@/utils';
+import { useSyncStatus } from '@/hooks';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+
+interface QuickActionButtonProps {
+  icon: string;
+  title: string;
+  onPress: () => void;
+  color?: string;
+}
+
+const QuickActionButton: React.FC<QuickActionButtonProps> = ({
+  icon,
+  title,
+  onPress,
+  color = '#007AFF',
+}) => {
+  const iconStyle = [styles.quickActionIcon, { backgroundColor: color }];
+  return (
+    <TouchableOpacity style={styles.quickActionButton} onPress={onPress}>
+      <View style={iconStyle}>
+        <Icon name={icon} size={24} color="#FFFFFF" />
+      </View>
+      <Text style={styles.quickActionText}>{title}</Text>
+    </TouchableOpacity>
+  );
+};
+
+interface BillItemProps {
+  bill: any;
+}
+
+const BillItem: React.FC<BillItemProps> = ({ bill }) => (
+  <View style={styles.billItem}>
+    <View style={styles.billInfo}>
+      <View style={styles.billHeader}>
+        <Text style={styles.billMerchant}>{bill.merchant}</Text>
+        <Text
+          style={[
+            styles.billAmount,
+            bill.type === 'income' ? styles.incomeAmount : styles.expenseAmount,
+          ]}
+        >
+          {bill.type === 'income' ? '+' : '-'}
+          {formatCurrency(bill.amount)}
+        </Text>
+      </View>
+      <View style={styles.billDetails}>
+        <Text style={styles.billCategory}>{bill.category}</Text>
+        <Text style={styles.billTime}>
+          {new Date(bill.time).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </Text>
+      </View>
+    </View>
+  </View>
+);
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const {user} = useSelector((state: RootState) => state.auth);
-  const {bills, loading} = useSelector((state: RootState) => state.bills);
+  const { bills } = useSelector((state: RootState) => state.bills);
+  const { user } = useSelector((state: RootState) => state.auth);
   const [refreshing, setRefreshing] = useState(false);
-  const {isSyncing, pendingChanges, startSync} = useSyncStatus();
+  const { pendingChanges, startSync } = useSyncStatus();
 
   const currentMonth = getMonthRange();
   const monthlyBills = bills.filter(bill => {
@@ -42,7 +97,7 @@ const HomeScreen = () => {
     try {
       // 这里应该调用获取账单的 action
       // await dispatch(fetchBills());
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -70,57 +125,13 @@ const HomeScreen = () => {
     navigation.navigate('Profile' as never);
   };
 
-  const QuickActionButton = ({
-    icon,
-    title,
-    onPress,
-    color = '#007AFF',
-  }: {
-    icon: string;
-    title: string;
-    onPress: () => void;
-    color?: string;
-  }) => (
-    <TouchableOpacity style={styles.quickActionButton} onPress={onPress}>
-      <View style={[styles.quickActionIcon, {backgroundColor: color}]}>
-        <Icon name={icon} size={24} color="#FFFFFF" />
-      </View>
-      <Text style={styles.quickActionText}>{title}</Text>
-    </TouchableOpacity>
-  );
-
-  const BillItem = ({bill}: {bill: any}) => (
-    <View style={styles.billItem}>
-      <View style={styles.billInfo}>
-        <View style={styles.billHeader}>
-          <Text style={styles.billMerchant}>{bill.merchant}</Text>
-          <Text
-            style={[
-              styles.billAmount,
-              {color: bill.type === 'income' ? '#34C759' : '#FF3B30'},
-            ]}>
-            {bill.type === 'income' ? '+' : '-'}{formatCurrency(bill.amount)}
-          </Text>
-        </View>
-        <View style={styles.billDetails}>
-          <Text style={styles.billCategory}>{bill.category}</Text>
-          <Text style={styles.billTime}>
-            {new Date(bill.time).toLocaleTimeString('zh-CN', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-
   return (
     <ScrollView
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }>
+      }
+    >
       <View style={styles.header}>
         <View style={styles.greeting}>
           <Text style={styles.greetingText}>你好，{user?.name || '用户'}</Text>
@@ -132,7 +143,10 @@ const HomeScreen = () => {
             })}
           </Text>
         </View>
-        <TouchableOpacity style={styles.profileButton} onPress={navigateToProfile}>
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={navigateToProfile}
+        >
           <Icon name="user" size={24} color="#007AFF" />
         </TouchableOpacity>
       </View>
@@ -142,13 +156,13 @@ const HomeScreen = () => {
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>收入</Text>
-            <Text style={[styles.summaryAmount, {color: '#34C759'}]}>
+            <Text style={[styles.summaryAmount, styles.incomeAmount]}>
               {formatCurrency(monthlyIncome)}
             </Text>
           </View>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>支出</Text>
-            <Text style={[styles.summaryAmount, {color: '#FF3B30'}]}>
+            <Text style={[styles.summaryAmount, styles.expenseAmount]}>
               {formatCurrency(monthlyExpense)}
             </Text>
           </View>
@@ -157,8 +171,11 @@ const HomeScreen = () => {
             <Text
               style={[
                 styles.summaryAmount,
-                {color: monthlyBalance >= 0 ? '#34C759' : '#FF3B30'},
-              ]}>
+                monthlyBalance >= 0
+                  ? styles.positiveBalance
+                  : styles.negativeBalance,
+              ]}
+            >
               {formatCurrency(monthlyBalance)}
             </Text>
           </View>
@@ -168,9 +185,7 @@ const HomeScreen = () => {
       {pendingChanges > 0 && (
         <TouchableOpacity style={styles.syncCard} onPress={startSync}>
           <Icon name="cloud-off" size={20} color="#FF9500" />
-          <Text style={styles.syncText}>
-            有 {pendingChanges} 条记录待同步
-          </Text>
+          <Text style={styles.syncText}>有 {pendingChanges} 条记录待同步</Text>
           <Icon name="chevron-right" size={16} color="#FF9500" />
         </TouchableOpacity>
       )}
@@ -222,7 +237,8 @@ const HomeScreen = () => {
             <Text style={styles.emptyText}>暂无账单记录</Text>
             <TouchableOpacity
               style={styles.addFirstBillButton}
-              onPress={navigateToAddBill}>
+              onPress={navigateToAddBill}
+            >
               <Text style={styles.addFirstBillText}>添加第一笔账单</Text>
             </TouchableOpacity>
           </View>
@@ -273,7 +289,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
@@ -299,6 +315,18 @@ const styles = StyleSheet.create({
   summaryAmount: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  expenseAmount: {
+    color: '#FF3B30',
+  },
+  incomeAmount: {
+    color: '#34C759',
+  },
+  positiveBalance: {
+    color: '#34C759',
+  },
+  negativeBalance: {
+    color: '#FF3B30',
   },
   syncCard: {
     flexDirection: 'row',
@@ -369,7 +397,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,

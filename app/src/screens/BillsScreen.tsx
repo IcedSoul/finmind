@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useMemo} from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,26 +6,105 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
-  Modal,
   RefreshControl,
   Alert,
 } from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
-import {useNavigation} from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/navigation';
 import Icon from 'react-native-vector-icons/Feather';
-import {RootState, Bill} from '@/types';
-import {formatCurrency, formatDate, groupBillsByDate} from '@/utils';
-import {useCategories} from '@/hooks';
-
+import { RootState, Bill } from '@/types';
+import { formatCurrency, formatDate, groupBillsByDate } from '@/utils';
 type FilterType = 'all' | 'income' | 'expense';
 type SortType = 'time' | 'amount';
 
+interface FilterButtonProps {
+  title: string;
+  isActive: boolean;
+  onPress: () => void;
+}
+
+interface BillItemProps {
+  bill: Bill;
+  onEdit: (bill: Bill) => void;
+  onDelete: (billId: string) => void;
+}
+
+interface SectionHeaderProps {
+  date: string;
+}
+
+const FilterButton: React.FC<FilterButtonProps> = ({
+  title,
+  isActive,
+  onPress,
+}) => (
+  <TouchableOpacity
+    style={[styles.filterButton, isActive && styles.filterButtonActive]}
+    onPress={onPress}
+  >
+    <Text
+      style={[
+        styles.filterButtonText,
+        isActive && styles.filterButtonTextActive,
+      ]}
+    >
+      {title}
+    </Text>
+  </TouchableOpacity>
+);
+
+const BillItem: React.FC<BillItemProps> = ({ bill, onEdit, onDelete }) => (
+  <TouchableOpacity
+    style={styles.billItem}
+    onPress={() => onEdit(bill)}
+    onLongPress={() => onDelete(bill.id)}
+  >
+    <View style={styles.billContent}>
+      <View style={styles.billInfo}>
+        <Text style={styles.billMerchant}>{bill.merchant}</Text>
+        {bill.description && (
+          <Text style={styles.billDescription}>{bill.description}</Text>
+        )}
+        <View style={styles.billMeta}>
+          <Text style={styles.billCategory}>{bill.category}</Text>
+          <Text style={styles.billTime}>
+            {new Date(bill.time).toLocaleTimeString('zh-CN', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.billAmount}>
+        <Text
+          style={[
+            styles.billAmountText,
+            bill.type === 'income' ? styles.incomeAmount : styles.expenseAmount,
+          ]}
+        >
+          {bill.type === 'income' ? '+' : '-'}
+          {formatCurrency(bill.amount)}
+        </Text>
+      </View>
+    </View>
+  </TouchableOpacity>
+);
+
+const SectionHeader: React.FC<SectionHeaderProps> = ({ date }) => (
+  <View style={styles.sectionHeader}>
+    <Text style={styles.sectionHeaderText}>{formatDate(date)}</Text>
+  </View>
+);
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 const BillsScreen = () => {
-  const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const {bills, loading} = useSelector((state: RootState) => state.bills);
-  const {categories} = useCategories();
-  
+  const navigation = useNavigation<NavigationProp>();
+
+  const { bills } = useSelector((state: RootState) => state.bills);
+
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [sortType, setSortType] = useState<SortType>('time');
@@ -37,9 +116,10 @@ const BillsScreen = () => {
     let filtered = bills;
 
     if (searchText) {
-      filtered = filtered.filter(bill =>
-        bill.merchant.toLowerCase().includes(searchText.toLowerCase()) ||
-        bill.description?.toLowerCase().includes(searchText.toLowerCase())
+      filtered = filtered.filter(
+        bill =>
+          bill.merchant.toLowerCase().includes(searchText.toLowerCase()) ||
+          bill.description?.toLowerCase().includes(searchText.toLowerCase()),
       );
     }
 
@@ -71,7 +151,7 @@ const BillsScreen = () => {
     try {
       // 这里应该调用获取账单的 action
       // await dispatch(fetchBills());
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -80,30 +160,26 @@ const BillsScreen = () => {
   };
 
   const handleDeleteBill = (billId: string) => {
-    Alert.alert(
-      '删除账单',
-      '确定要删除这条账单记录吗？',
-      [
-        {text: '取消', style: 'cancel'},
-        {
-          text: '删除',
-          style: 'destructive',
-          onPress: () => {
-            // 这里应该调用删除账单的 action
-            // dispatch(deleteBill(billId));
-            console.log('Delete bill:', billId);
-          },
+    Alert.alert('删除账单', '确定要删除这条账单记录吗？', [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '删除',
+        style: 'destructive',
+        onPress: () => {
+          // 这里应该调用删除账单的 action
+          // dispatch(deleteBill(billId));
+          console.log('Delete bill:', billId);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleEditBill = (bill: Bill) => {
-    navigation.navigate('EditBill' as never, {bill} as never);
+    navigation.navigate('AddBill', { bill });
   };
 
   const navigateToAddBill = () => {
-    navigation.navigate('AddBill' as never);
+    navigation.navigate('AddBill');
   };
 
   const clearFilters = () => {
@@ -113,81 +189,25 @@ const BillsScreen = () => {
     setSortType('time');
   };
 
-  const FilterButton = ({
-    title,
-    isActive,
-    onPress,
-  }: {
-    title: string;
-    isActive: boolean;
-    onPress: () => void;
-  }) => (
-    <TouchableOpacity
-      style={[styles.filterButton, isActive && styles.filterButtonActive]}
-      onPress={onPress}>
-      <Text
-        style={[
-          styles.filterButtonText,
-          isActive && styles.filterButtonTextActive,
-        ]}>
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const BillItem = ({bill}: {bill: Bill}) => (
-    <TouchableOpacity
-      style={styles.billItem}
-      onPress={() => handleEditBill(bill)}
-      onLongPress={() => handleDeleteBill(bill.id)}>
-      <View style={styles.billContent}>
-        <View style={styles.billInfo}>
-          <Text style={styles.billMerchant}>{bill.merchant}</Text>
-          {bill.description && (
-            <Text style={styles.billDescription}>{bill.description}</Text>
-          )}
-          <View style={styles.billMeta}>
-            <Text style={styles.billCategory}>{bill.category}</Text>
-            <Text style={styles.billTime}>
-              {new Date(bill.time).toLocaleTimeString('zh-CN', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.billAmount}>
-          <Text
-            style={[
-              styles.billAmountText,
-              {color: bill.type === 'income' ? '#34C759' : '#FF3B30'},
-            ]}>
-            {bill.type === 'income' ? '+' : '-'}{formatCurrency(bill.amount)}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const SectionHeader = ({date}: {date: string}) => (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionHeaderText}>{formatDate(date)}</Text>
-    </View>
-  );
-
-  const renderItem = ({item}: {item: any}) => {
+  const renderItem = ({ item }: { item: any }) => {
     if (item.type === 'header') {
       return <SectionHeader date={item.date} />;
     }
-    return <BillItem bill={item} />;
+    return (
+      <BillItem
+        bill={item}
+        onEdit={handleEditBill}
+        onDelete={handleDeleteBill}
+      />
+    );
   };
 
   const flatListData = useMemo(() => {
     const data: any[] = [];
-    Object.entries(groupedBills).forEach(([date, bills]) => {
-      data.push({type: 'header', date, id: `header-${date}`});
-      bills.forEach(bill => {
-        data.push({...bill, type: 'bill'});
+    Object.entries(groupedBills).forEach(([date, billsArray]) => {
+      data.push({ type: 'header', date, id: `header-${date}` });
+      billsArray.forEach(bill => {
+        data.push({ ...bill, type: 'bill' });
       });
     });
     return data;
@@ -197,7 +217,12 @@ const BillsScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.searchContainer}>
-          <Icon name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
+          <Icon
+            name={'search' as any}
+            size={20}
+            color="#8E8E93"
+            style={styles.searchIcon}
+          />
           <TextInput
             style={styles.searchInput}
             placeholder="搜索商户或备注"
@@ -207,14 +232,15 @@ const BillsScreen = () => {
           />
           {searchText ? (
             <TouchableOpacity onPress={() => setSearchText('')}>
-              <Icon name="x" size={20} color="#8E8E93" />
+              <Icon name={'x' as any} size={20} color="#8E8E93" />
             </TouchableOpacity>
           ) : null}
         </View>
         <TouchableOpacity
           style={styles.filterToggle}
-          onPress={() => setShowFilters(!showFilters)}>
-          <Icon name="filter" size={20} color="#007AFF" />
+          onPress={() => setShowFilters(!showFilters)}
+        >
+          <Icon name={'filter' as any} size={20} color="#007AFF" />
         </TouchableOpacity>
       </View>
 
@@ -240,7 +266,7 @@ const BillsScreen = () => {
               />
             </View>
           </View>
-          
+
           <View style={styles.filterRow}>
             <Text style={styles.filterLabel}>排序:</Text>
             <View style={styles.filterButtons}>
@@ -257,7 +283,10 @@ const BillsScreen = () => {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.clearFiltersButton} onPress={clearFilters}>
+          <TouchableOpacity
+            style={styles.clearFiltersButton}
+            onPress={clearFilters}
+          >
             <Text style={styles.clearFiltersText}>清除筛选</Text>
           </TouchableOpacity>
         </View>
@@ -274,11 +303,12 @@ const BillsScreen = () => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Icon name="file-text" size={64} color="#C7C7CC" />
+            <Icon name={'file-text' as any} size={64} color="#C7C7CC" />
             <Text style={styles.emptyText}>暂无账单记录</Text>
             <TouchableOpacity
               style={styles.addBillButton}
-              onPress={navigateToAddBill}>
+              onPress={navigateToAddBill}
+            >
               <Text style={styles.addBillButtonText}>添加账单</Text>
             </TouchableOpacity>
           </View>
@@ -286,7 +316,7 @@ const BillsScreen = () => {
       />
 
       <TouchableOpacity style={styles.fab} onPress={navigateToAddBill}>
-        <Icon name="plus" size={24} color="#FFFFFF" />
+        <Icon name={'plus' as any} size={24} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
   );
@@ -445,6 +475,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  incomeAmount: {
+    color: '#34C759',
+  },
+  expenseAmount: {
+    color: '#FF3B30',
+  },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
@@ -479,7 +515,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,

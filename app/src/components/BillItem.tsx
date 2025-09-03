@@ -1,14 +1,13 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import {Bill} from '@/types';
-import {formatCurrency, formatTime, getCategoryIcon, getCategoryColor} from '@/utils';
+import { Bill } from '@/types';
+import {
+  formatCurrency,
+  formatTime,
+  getCategoryIcon,
+  getCategoryColor,
+} from '@/utils';
 
 interface BillItemProps {
   bill: Bill;
@@ -26,39 +25,37 @@ const BillItem: React.FC<BillItemProps> = ({
   showActions = false,
 }) => {
   const handleDelete = () => {
-    Alert.alert(
-      '确认删除',
-      '确定要删除这条账单记录吗？',
-      [
-        {text: '取消', style: 'cancel'},
-        {
-          text: '删除',
-          style: 'destructive',
-          onPress: () => onDelete?.(bill),
-        },
-      ]
-    );
+    Alert.alert('确认删除', '确定要删除这条账单记录吗？', [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '删除',
+        style: 'destructive',
+        onPress: () => onDelete?.(bill),
+      },
+    ]);
   };
 
   return (
     <TouchableOpacity
       style={styles.container}
       onPress={() => onPress?.(bill)}
-      activeOpacity={0.7}>
+      activeOpacity={0.7}
+    >
       <View style={styles.content}>
         <View style={styles.leftSection}>
           <View
             style={[
               styles.categoryIcon,
-              {backgroundColor: getCategoryColor(bill.category)},
-            ]}>
+              { backgroundColor: getCategoryColor(bill.category) },
+            ]}
+          >
             <Icon
-              name={getCategoryIcon(bill.category)}
+              name={getCategoryIcon(bill.category) as any}
               size={20}
               color="#FFFFFF"
             />
           </View>
-          
+
           <View style={styles.billInfo}>
             <Text style={styles.merchant} numberOfLines={1}>
               {bill.merchant}
@@ -71,39 +68,45 @@ const BillItem: React.FC<BillItemProps> = ({
             )}
           </View>
         </View>
-        
+
         <View style={styles.rightSection}>
           <Text
             style={[
               styles.amount,
-              bill.type === 'income' ? styles.incomeAmount : styles.expenseAmount,
-            ]}>
-            {bill.type === 'income' ? '+' : '-'}{formatCurrency(bill.amount)}
+              bill.type === 'income'
+                ? styles.incomeAmount
+                : styles.expenseAmount,
+            ]}
+          >
+            {bill.type === 'income' ? '+' : '-'}
+            {formatCurrency(bill.amount)}
           </Text>
           <Text style={styles.time}>{formatTime(bill.time)}</Text>
           {!bill.synced && (
             <View style={styles.syncIndicator}>
-              <Icon name="wifi-off" size={12} color="#FF9500" />
+              <Icon name={'wifi-off' as any} size={12} color="#FF9500" />
             </View>
           )}
         </View>
       </View>
-      
+
       {showActions && (
         <View style={styles.actions}>
           {onEdit && (
             <TouchableOpacity
               style={[styles.actionButton, styles.editButton]}
-              onPress={() => onEdit(bill)}>
-              <Icon name="edit-2" size={16} color="#007AFF" />
+              onPress={() => onEdit(bill)}
+            >
+              <Icon name={'edit-2' as any} size={16} color="#007AFF" />
             </TouchableOpacity>
           )}
-          
+
           {onDelete && (
             <TouchableOpacity
               style={[styles.actionButton, styles.deleteButton]}
-              onPress={handleDelete}>
-              <Icon name="trash-2" size={16} color="#FF3B30" />
+              onPress={handleDelete}
+            >
+              <Icon name={'trash-2' as any} size={16} color="#FF3B30" />
             </TouchableOpacity>
           )}
         </View>
@@ -119,7 +122,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,

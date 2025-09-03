@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,21 +9,72 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
-import {useNavigation} from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import {RootState} from '@/types';
-import {logout} from '@/store/slices/authSlice';
-import {storage} from '@/utils';
-import {useSyncStatus} from '@/hooks';
+import { RootState } from '@/types';
+import { logout } from '@/store/slices/authSlice';
+import { storage } from '@/utils';
+import { useSyncStatus } from '@/hooks';
+
+const SettingItem = ({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  showArrow = true,
+  rightComponent,
+}: {
+  icon: string;
+  title: string;
+  subtitle?: string;
+  onPress?: () => void;
+  showArrow?: boolean;
+  rightComponent?: React.ReactNode;
+}) => (
+  <TouchableOpacity
+    style={styles.settingItem}
+    onPress={onPress}
+    disabled={!onPress}
+  >
+    <View style={styles.settingLeft}>
+      <View style={styles.settingIcon}>
+        <Icon name={icon} size={20} color="#007AFF" />
+      </View>
+      <View style={styles.settingText}>
+        <Text style={styles.settingTitle}>{title}</Text>
+        {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+      </View>
+    </View>
+    <View style={styles.settingRight}>
+      {rightComponent}
+      {showArrow && onPress && (
+        <Icon name="chevron-right" size={16} color="#C7C7CC" />
+      )}
+    </View>
+  </TouchableOpacity>
+);
+
+const SettingSection = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <View style={styles.settingSection}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={styles.sectionContent}>{children}</View>
+  </View>
+);
 
 const SettingsScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const {user} = useSelector((state: RootState) => state.auth);
-  const {bills} = useSelector((state: RootState) => state.bills);
-  const {isSyncing, pendingChanges, startSync} = useSyncStatus();
-  
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { bills } = useSelector((state: RootState) => state.bills);
+  const { isSyncing, pendingChanges, startSync } = useSyncStatus();
+
   const [notifications, setNotifications] = useState(true);
   const [autoSync, setAutoSync] = useState(true);
   const [biometric, setBiometric] = useState(false);
@@ -35,7 +86,7 @@ const SettingsScreen = () => {
   };
 
   const confirmLogout = () => {
-    dispatch(logout());
+    dispatch(logout() as any);
     setShowLogoutModal(false);
   };
 
@@ -69,59 +120,9 @@ const SettingsScreen = () => {
     Alert.alert(
       'FinMind 全记账',
       'Version 1.0.0\n\n一款智能的个人记账应用，支持AI识别、数据同步等功能。\n\n© 2024 FinMind Team',
-      [{text: '确定'}]
+      [{ text: '确定' }],
     );
   };
-
-  const SettingItem = ({
-    icon,
-    title,
-    subtitle,
-    onPress,
-    showArrow = true,
-    rightComponent,
-  }: {
-    icon: string;
-    title: string;
-    subtitle?: string;
-    onPress?: () => void;
-    showArrow?: boolean;
-    rightComponent?: React.ReactNode;
-  }) => (
-    <TouchableOpacity
-      style={styles.settingItem}
-      onPress={onPress}
-      disabled={!onPress}>
-      <View style={styles.settingLeft}>
-        <View style={styles.settingIcon}>
-          <Icon name={icon} size={20} color="#007AFF" />
-        </View>
-        <View style={styles.settingText}>
-          <Text style={styles.settingTitle}>{title}</Text>
-          {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
-        </View>
-      </View>
-      <View style={styles.settingRight}>
-        {rightComponent}
-        {showArrow && onPress && (
-          <Icon name="chevron-right" size={16} color="#C7C7CC" />
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-
-  const SettingSection = ({
-    title,
-    children,
-  }: {
-    title: string;
-    children: React.ReactNode;
-  }) => (
-    <View style={styles.settingSection}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionContent}>{children}</View>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
@@ -162,7 +163,7 @@ const SettingsScreen = () => {
               <Switch
                 value={autoSync}
                 onValueChange={setAutoSync}
-                trackColor={{false: '#E5E5EA', true: '#007AFF'}}
+                trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
                 thumbColor="#FFFFFF"
               />
             }
@@ -179,7 +180,7 @@ const SettingsScreen = () => {
               <Switch
                 value={notifications}
                 onValueChange={setNotifications}
-                trackColor={{false: '#E5E5EA', true: '#007AFF'}}
+                trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
                 thumbColor="#FFFFFF"
               />
             }
@@ -193,7 +194,7 @@ const SettingsScreen = () => {
               <Switch
                 value={biometric}
                 onValueChange={setBiometric}
-                trackColor={{false: '#E5E5EA', true: '#007AFF'}}
+                trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
                 thumbColor="#FFFFFF"
               />
             }
@@ -227,11 +228,7 @@ const SettingsScreen = () => {
             title="帮助与反馈"
             onPress={() => Alert.alert('提示', '帮助功能开发中')}
           />
-          <SettingItem
-            icon="info"
-            title="关于应用"
-            onPress={handleAbout}
-          />
+          <SettingItem icon="info" title="关于应用" onPress={handleAbout} />
         </SettingSection>
 
         <View style={styles.logoutSection}>
@@ -246,7 +243,8 @@ const SettingsScreen = () => {
         visible={showLogoutModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowLogoutModal(false)}>
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>退出登录</Text>
@@ -256,12 +254,14 @@ const SettingsScreen = () => {
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowLogoutModal(false)}>
+                onPress={() => setShowLogoutModal(false)}
+              >
                 <Text style={styles.cancelButtonText}>取消</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton]}
-                onPress={confirmLogout}>
+                onPress={confirmLogout}
+              >
                 <Text style={styles.confirmButtonText}>退出</Text>
               </TouchableOpacity>
             </View>
@@ -273,7 +273,8 @@ const SettingsScreen = () => {
         visible={showClearDataModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowClearDataModal(false)}>
+        onRequestClose={() => setShowClearDataModal(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>清除本地数据</Text>
@@ -283,12 +284,14 @@ const SettingsScreen = () => {
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowClearDataModal(false)}>
+                onPress={() => setShowClearDataModal(false)}
+              >
                 <Text style={styles.cancelButtonText}>取消</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.dangerButton]}
-                onPress={confirmClearData}>
+                onPress={confirmClearData}
+              >
                 <Text style={styles.dangerButtonText}>清除</Text>
               </TouchableOpacity>
             </View>

@@ -1,161 +1,97 @@
-# FinMind全记账 React Native应用
+This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
-智能记账应用，支持AI识别和数据分析功能。
+# Getting Started
 
-## 功能特性
+> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
 
-- 📱 用户认证（登录/注册）
-- 💰 账单管理（添加/编辑/删除）
-- 🤖 AI智能识别账单信息
-- 📊 数据统计和可视化
-- 🔄 数据同步（本地SQLite + 云端）
-- 📤 数据导入导出
-- ⚙️ 个性化设置
+## Step 1: Start Metro
 
-## 技术栈
+First, you will need to run **Metro**, the JavaScript build tool for React Native.
 
-- React Native 0.72.6
-- TypeScript
-- Redux Toolkit + Redux Persist
-- React Navigation 6
-- SQLite (本地数据库)
-- Axios (网络请求)
-- Vector Icons
+To start the Metro dev server, run the following command from the root of your React Native project:
 
-## 项目结构
+```sh
+# Using npm
+npm start
 
-```
-src/
-├── components/          # 可复用组件
-│   ├── Button.tsx
-│   ├── Input.tsx
-│   ├── Loading.tsx
-│   ├── EmptyState.tsx
-│   ├── BillItem.tsx
-│   ├── StatCard.tsx
-│   └── index.ts
-├── hooks/              # 自定义Hooks
-│   └── index.ts
-├── navigation/         # 导航配置
-│   └── index.tsx
-├── screens/           # 页面组件
-│   ├── LoginScreen.tsx
-│   ├── RegisterScreen.tsx
-│   ├── HomeScreen.tsx
-│   ├── BillsScreen.tsx
-│   ├── StatisticsScreen.tsx
-│   ├── SettingsScreen.tsx
-│   ├── AddBillScreen.tsx
-│   ├── EditBillScreen.tsx
-│   ├── ImportBillScreen.tsx
-│   └── index.ts
-├── services/          # 服务层
-│   ├── authService.ts
-│   ├── billService.ts
-│   ├── database.ts
-│   └── aiService.ts
-├── store/             # Redux状态管理
-│   ├── slices/
-│   │   ├── authSlice.ts
-│   │   └── billsSlice.ts
-│   └── index.ts
-├── types/             # TypeScript类型定义
-│   └── index.ts
-├── utils/             # 工具函数
-│   └── index.ts
-└── App.tsx            # 应用入口
+# OR using Yarn
+yarn start
 ```
 
-## 安装和运行
+## Step 2: Build and run your app
 
-### 环境要求
+With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
 
-- Node.js >= 16
-- React Native CLI
-- Android Studio (Android开发)
-- Xcode (iOS开发)
+### Android
 
-### 安装依赖
-
-```bash
-npm install
-```
-
-### iOS设置
-
-```bash
-cd ios && pod install && cd ..
-```
-
-### 运行应用
-
-```bash
-# Android
+```sh
+# Using npm
 npm run android
 
-# iOS
+# OR using Yarn
+yarn android
+```
+
+### iOS
+
+For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+
+The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+
+```sh
+bundle install
+```
+
+Then, and every time you update your native dependencies, run:
+
+```sh
+bundle exec pod install
+```
+
+For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+
+```sh
+# Using npm
 npm run ios
 
-# 启动Metro服务
-npm start
+# OR using Yarn
+yarn ios
 ```
 
-### 代码检查
+If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
 
-```bash
-# 运行ESLint和TypeScript检查
-npm run check
+This is one way to run your app — you can also build it directly from Android Studio or Xcode.
 
-# 仅运行ESLint
-npm run lint
-```
+## Step 3: Modify your app
 
-## 开发说明
+Now that you have successfully run the app, let's make changes!
 
-### 状态管理
+Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
 
-使用Redux Toolkit进行状态管理，主要包含：
-- `authSlice`: 用户认证状态
-- `billsSlice`: 账单数据状态
+When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
 
-### 数据存储
+- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
+- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
 
-- 本地数据库：SQLite（用于离线存储）
-- 状态持久化：Redux Persist + AsyncStorage
-- 云端同步：通过API与后端服务同步
+## Congratulations! :tada:
 
-### AI功能
+You've successfully run and modified your React Native App. :partying_face:
 
-预留了本地AI模型接口，支持：
-- 文本内容解析
-- 图片OCR识别
-- 账单信息提取
+### Now what?
 
-### 导航结构
+- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
+- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
 
-- 认证流程：Login → Register
-- 主应用：底部Tab导航（Home, Bills, Statistics, Settings）
-- 账单管理：Stack导航（List → Add/Edit → Import）
+# Troubleshooting
 
-## API接口
+If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
 
-应用设计为前后端分离架构，需要配合后端API使用：
+# Learn More
 
-- 用户认证：`/api/auth/login`, `/api/auth/register`
-- 账单管理：`/api/bills/*`
-- 数据统计：`/api/statistics/*`
-- 数据同步：`/api/sync/*`
+To learn more about React Native, take a look at the following resources:
 
-## 构建发布
-
-```bash
-# Android Release
-npm run build:android
-
-# iOS Release
-npm run build:ios
-```
-
-## 许可证
-
-MIT License
+- [React Native Website](https://reactnative.dev) - learn more about React Native.
+- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
+- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
+- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
+- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.

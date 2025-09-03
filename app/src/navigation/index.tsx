@@ -1,29 +1,27 @@
 import React from 'react';
-import {NavigationContainer} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {useSelector} from 'react-redux';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Feather';
-import {RootState} from '@/types';
+import { RootState } from '@/types';
 
 import LoginScreen from '@/screens/LoginScreen';
 import RegisterScreen from '@/screens/RegisterScreen';
 import HomeScreen from '@/screens/HomeScreen';
-import BillListScreen from '@/screens/BillListScreen';
+import BillsScreen from '@/screens/BillsScreen';
 import AddBillScreen from '@/screens/AddBillScreen';
-import ImportScreen from '@/screens/ImportScreen';
+import ImportBillScreen from '@/screens/ImportBillScreen';
 import StatisticsScreen from '@/screens/StatisticsScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
-import ProfileScreen from '@/screens/ProfileScreen';
 
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   Login: undefined;
   Register: undefined;
-  AddBill: undefined;
+  AddBill: { bill?: any } | undefined;
   Import: undefined;
-  Profile: undefined;
 };
 
 export type MainTabParamList = {
@@ -42,39 +40,44 @@ const AuthStack = () => {
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
-      }}>
+      }}
+    >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
     </Stack.Navigator>
   );
 };
 
+const getTabBarIcon =
+  ({ route }: { route: { name: keyof MainTabParamList } }) =>
+  ({ color, size }: { color: string; size: number }) => {
+    let iconName: string;
+
+    switch (route.name) {
+      case 'Home':
+        iconName = 'home';
+        break;
+      case 'Bills':
+        iconName = 'list';
+        break;
+      case 'Statistics':
+        iconName = 'bar-chart-2';
+        break;
+      case 'Settings':
+        iconName = 'settings';
+        break;
+      default:
+        iconName = 'circle';
+    }
+
+    return <Icon name={iconName as any} size={size} color={color} />;
+  };
+
 const MainTabs = () => {
   return (
     <Tab.Navigator
-      screenOptions={({route}) => ({
-        tabBarIcon: ({focused, color, size}) => {
-          let iconName: string;
-
-          switch (route.name) {
-            case 'Home':
-              iconName = 'home';
-              break;
-            case 'Bills':
-              iconName = 'list';
-              break;
-            case 'Statistics':
-              iconName = 'bar-chart-2';
-              break;
-            case 'Settings':
-              iconName = 'settings';
-              break;
-            default:
-              iconName = 'circle';
-          }
-
-          return <Icon name={iconName} size={size} color={color} />;
-        },
+      screenOptions={({ route }) => ({
+        tabBarIcon: getTabBarIcon({ route }),
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: '#8E8E93',
         tabBarStyle: {
@@ -105,7 +108,8 @@ const MainTabs = () => {
           fontWeight: '600',
           color: '#1C1C1E',
         },
-      })}>
+      })}
+    >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
@@ -116,7 +120,7 @@ const MainTabs = () => {
       />
       <Tab.Screen
         name="Bills"
-        component={BillListScreen}
+        component={BillsScreen}
         options={{
           title: '账单',
         }}
@@ -150,7 +154,8 @@ const AppNavigator = () => {
         screenOptions={{
           headerShown: false,
           animation: 'fade',
-        }}>
+        }}
+      >
         {isAuthenticated ? (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
@@ -174,28 +179,10 @@ const AppNavigator = () => {
             />
             <Stack.Screen
               name="Import"
-              component={ImportScreen}
+              component={ImportBillScreen}
               options={{
                 headerShown: true,
                 title: '导入账单',
-                animation: 'slide_from_right',
-                headerStyle: {
-                  backgroundColor: '#FFFFFF',
-                },
-                headerTitleStyle: {
-                  fontSize: 18,
-                  fontWeight: '600',
-                  color: '#1C1C1E',
-                },
-                headerTintColor: '#007AFF',
-              }}
-            />
-            <Stack.Screen
-              name="Profile"
-              component={ProfileScreen}
-              options={{
-                headerShown: true,
-                title: '个人资料',
                 animation: 'slide_from_right',
                 headerStyle: {
                   backgroundColor: '#FFFFFF',

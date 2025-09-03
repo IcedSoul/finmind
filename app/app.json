@@ -1,9 +1,35 @@
 {
-  "name": "FinMind",
-  "displayName": "FinMind全记账",
-  "version": "1.0.0",
-  "description": "智能记账应用，支持AI识别和数据分析",
-  "main": "index.js",
-  "author": "FinMind Team",
-  "license": "MIT"
+  "expo": {
+    "name": "FinMind全记账",
+    "slug": "finmind-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.finmind.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.finmind.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite"
+    ]
+  }
 }

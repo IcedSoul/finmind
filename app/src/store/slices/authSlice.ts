@@ -1,6 +1,6 @@
-import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
-import {AuthState, User, LoginRequest, RegisterRequest, ApiResponse} from '@/types';
-import {authService} from '@/services/authService';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { AuthState, LoginRequest, RegisterRequest } from '@/types';
+import { authService } from '@/services/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const initialState: AuthState = {
@@ -13,7 +13,7 @@ const initialState: AuthState = {
 
 export const login = createAsyncThunk(
   'auth/login',
-  async (credentials: LoginRequest, {rejectWithValue}) => {
+  async (credentials: LoginRequest, { rejectWithValue }) => {
     try {
       const response = await authService.login(credentials);
       if (response.success && response.data) {
@@ -30,7 +30,7 @@ export const login = createAsyncThunk(
 
 export const register = createAsyncThunk(
   'auth/register',
-  async (userData: RegisterRequest, {rejectWithValue}) => {
+  async (userData: RegisterRequest, { rejectWithValue }) => {
     try {
       const response = await authService.register(userData);
       if (response.success && response.data) {
@@ -46,14 +46,14 @@ export const register = createAsyncThunk(
 
 export const loadStoredAuth = createAsyncThunk(
   'auth/loadStored',
-  async (_, {rejectWithValue}) => {
+  async (_, { rejectWithValue }) => {
     try {
       const token = await AsyncStorage.getItem('token');
       const userStr = await AsyncStorage.getItem('user');
-      
+
       if (token && userStr) {
         const user = JSON.parse(userStr);
-        return {token, user};
+        return { token, user };
       }
       return null;
     } catch (error: any) {
@@ -62,13 +62,10 @@ export const loadStoredAuth = createAsyncThunk(
   },
 );
 
-export const logout = createAsyncThunk(
-  'auth/logout',
-  async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
-  },
-);
+export const logout = createAsyncThunk('auth/logout', async () => {
+  await AsyncStorage.removeItem('token');
+  await AsyncStorage.removeItem('user');
+});
 
 const authSlice = createSlice({
   name: 'auth',
@@ -122,5 +119,5 @@ const authSlice = createSlice({
   },
 });
 
-export const {clearError} = authSlice.actions;
+export const { clearError } = authSlice.actions;
 export default authSlice.reducer;

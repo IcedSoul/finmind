@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,8 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import {useSelector} from 'react-redux';
-import Icon from 'react-native-vector-icons/Feather';
-import {RootState} from '@/types';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/types';
 import {
   formatCurrency,
   getMonthRange,
@@ -17,18 +16,229 @@ import {
   calculateTotalAmount,
   getCategoryColor,
 } from '@/utils';
-import {useCategories} from '@/hooks';
 
-const {width} = Dimensions.get('window');
-const chartWidth = width - 40;
+const { width } = Dimensions.get('window');
 
 type PeriodType = 'week' | 'month' | 'year';
 
+interface PeriodButtonProps {
+  period: PeriodType;
+  title: string;
+  selectedPeriod: PeriodType;
+  onPress: (period: PeriodType) => void;
+}
+
+const PeriodButton: React.FC<PeriodButtonProps> = ({
+  period,
+  title,
+  selectedPeriod,
+  onPress,
+}) => (
+  <TouchableOpacity
+    style={[
+      styles.periodButton,
+      selectedPeriod === period && styles.periodButtonActive,
+    ]}
+    onPress={() => onPress(period)}
+  >
+    <Text
+      style={[
+        styles.periodButtonText,
+        selectedPeriod === period && styles.periodButtonTextActive,
+      ]}
+    >
+      {title}
+    </Text>
+  </TouchableOpacity>
+);
+
+interface TabButtonProps {
+  tab: 'overview' | 'category' | 'trend';
+  title: string;
+  selectedTab: 'overview' | 'category' | 'trend';
+  onPress: (tab: 'overview' | 'category' | 'trend') => void;
+}
+
+const TabButton: React.FC<TabButtonProps> = ({
+  tab,
+  title,
+  selectedTab,
+  onPress,
+}) => (
+  <TouchableOpacity
+    style={[styles.tabButton, selectedTab === tab && styles.tabButtonActive]}
+    onPress={() => onPress(tab)}
+  >
+    <Text
+      style={[
+        styles.tabButtonText,
+        selectedTab === tab && styles.tabButtonTextActive,
+      ]}
+    >
+      {title}
+    </Text>
+  </TouchableOpacity>
+);
+
+interface OverviewTabProps {
+  totalIncome: number;
+  totalExpense: number;
+  balance: number;
+  chartW: number;
+  formatAmount: (amount: number) => string;
+}
+
+const OverviewTab: React.FC<OverviewTabProps> = ({
+  totalIncome,
+  totalExpense,
+  balance,
+  chartW: _chartW,
+  formatAmount,
+}) => {
+  const getBalanceStyle = () => [
+    styles.summaryAmount,
+    balance >= 0 ? styles.positiveAmount : styles.negativeAmount,
+  ];
+
+  return (
+    <View>
+      <View style={styles.summaryCard}>
+        <Text style={styles.cardTitle}>收支概览</Text>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>收入</Text>
+            <Text style={[styles.summaryAmount, styles.incomeAmount]}>
+              {formatAmount(totalIncome)}
+            </Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>支出</Text>
+            <Text style={[styles.summaryAmount, styles.expenseAmount]}>
+              {formatAmount(totalExpense)}
+            </Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>结余</Text>
+            <Text style={getBalanceStyle()}>{formatAmount(balance)}</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+interface CategoryTabProps {
+  categoryStats: Array<{
+    category: string;
+    income: number;
+    expense: number;
+    total: number;
+    percentage: number;
+  }>;
+  getColor: (category: string) => string;
+  formatAmount: (amount: number) => string;
+}
+
+const CategoryTab: React.FC<CategoryTabProps> = ({
+  categoryStats,
+  getColor,
+  formatAmount,
+}) => {
+  const getCategoryIconStyle = (category: string) => [
+    styles.categoryIcon,
+    { backgroundColor: getColor(category) },
+  ];
+
+  return (
+    <View style={styles.chartCard}>
+      <Text style={styles.cardTitle}>分类统计</Text>
+      {categoryStats.map((item, index) => (
+        <View key={index} style={styles.categoryItem}>
+          <View style={styles.categoryInfo}>
+            <View style={getCategoryIconStyle(item.category)}>
+              <Text style={styles.categoryIconText}>
+                {item.category.charAt(0)}
+              </Text>
+            </View>
+            <Text style={styles.categoryName}>{item.category}</Text>
+          </View>
+          <View style={styles.categoryAmounts}>
+            <Text style={styles.categoryAmount}>
+              {formatAmount(item.expense)}
+            </Text>
+            <Text style={styles.categoryPercentage}>
+              {item.percentage.toFixed(1)}%
+            </Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+interface TrendTabProps {
+  trendData: Array<{
+    date: string;
+    income: number;
+    expense: number;
+  }>;
+}
+
+const TrendTab: React.FC<TrendTabProps> = ({ trendData }) => {
+  const maxAmount = Math.max(
+    ...trendData.map(d => Math.max(d.income, d.expense)),
+  );
+
+  const getIncomeBarStyle = (income: number) => [
+    styles.trendBar,
+    styles.incomeBar,
+    {
+      height: maxAmount > 0 ? (income / maxAmount) * 80 : 0,
+    },
+  ];
+
+  const getExpenseBarStyle = (expense: number) => [
+    styles.trendBar,
+    styles.expenseBar,
+    {
+      height: maxAmount > 0 ? (expense / maxAmount) * 80 : 0,
+    },
+  ];
+
+  return (
+    <View style={styles.chartCard}>
+      <Text style={styles.cardTitle}>7日趋势</Text>
+      <View style={styles.trendChart}>
+        {trendData.map((item, index) => (
+          <View key={index} style={styles.trendItem}>
+            <View style={styles.trendBars}>
+              <View style={getIncomeBarStyle(item.income)} />
+              <View style={getExpenseBarStyle(item.expense)} />
+            </View>
+            <Text style={styles.trendDate}>{item.date}</Text>
+          </View>
+        ))}
+      </View>
+      <View style={styles.legend}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, styles.incomeLegendDot]} />
+          <Text style={styles.legendText}>收入</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, styles.expenseLegendDot]} />
+          <Text style={styles.legendText}>支出</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
 const StatisticsScreen = () => {
-  const {bills} = useSelector((state: RootState) => state.bills);
-  const {categories} = useCategories();
+  const { bills } = useSelector((state: RootState) => state.bills);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'category' | 'trend'>('overview');
+  const [selectedTab, setSelectedTab] = useState<
+    'overview' | 'category' | 'trend'
+  >('overview');
 
   const getPeriodRange = () => {
     switch (selectedPeriod) {
@@ -56,13 +266,14 @@ const StatisticsScreen = () => {
   const totalIncome = calculateTotalAmount(periodBills, 'income');
   const totalExpense = calculateTotalAmount(periodBills, 'expense');
   const balance = totalIncome - totalExpense;
+  const chartWidth = width - 40;
 
   const categoryStats = useMemo(() => {
-    const stats: {[key: string]: {income: number; expense: number}} = {};
-    
+    const stats: { [key: string]: { income: number; expense: number } } = {};
+
     periodBills.forEach(bill => {
       if (!stats[bill.category]) {
-        stats[bill.category] = {income: 0, expense: 0};
+        stats[bill.category] = { income: 0, expense: 0 };
       }
       stats[bill.category][bill.type] += bill.amount;
     });
@@ -73,7 +284,7 @@ const StatisticsScreen = () => {
         income: amounts.income,
         expense: amounts.expense,
         total: amounts.income + amounts.expense,
-        percentage: ((amounts.expense / totalExpense) * 100) || 0,
+        percentage: (amounts.expense / totalExpense) * 100 || 0,
       }))
       .sort((a, b) => b.total - a.total);
   }, [periodBills, totalExpense]);
@@ -82,214 +293,33 @@ const StatisticsScreen = () => {
     const days = 7;
     const data = [];
     const now = new Date();
-    
+
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dayStart = new Date(date.setHours(0, 0, 0, 0));
       const dayEnd = new Date(date.setHours(23, 59, 59, 999));
-      
+
       const dayBills = bills.filter(bill => {
         const billDate = new Date(bill.time);
         return billDate >= dayStart && billDate <= dayEnd;
       });
-      
+
       const income = calculateTotalAmount(dayBills, 'income');
       const expense = calculateTotalAmount(dayBills, 'expense');
-      
+
       data.push({
-        date: dayStart.toLocaleDateString('zh-CN', {month: 'numeric', day: 'numeric'}),
+        date: dayStart.toLocaleDateString('zh-CN', {
+          month: 'numeric',
+          day: 'numeric',
+        }),
         income,
         expense,
       });
     }
-    
+
     return data;
   }, [bills]);
-
-  const PeriodButton = ({period, title}: {period: PeriodType; title: string}) => (
-    <TouchableOpacity
-      style={[
-        styles.periodButton,
-        selectedPeriod === period && styles.periodButtonActive,
-      ]}
-      onPress={() => setSelectedPeriod(period)}>
-      <Text
-        style={[
-          styles.periodButtonText,
-          selectedPeriod === period && styles.periodButtonTextActive,
-        ]}>
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const TabButton = ({tab, title}: {tab: typeof selectedTab; title: string}) => (
-    <TouchableOpacity
-      style={[
-        styles.tabButton,
-        selectedTab === tab && styles.tabButtonActive,
-      ]}
-      onPress={() => setSelectedTab(tab)}>
-      <Text
-        style={[
-          styles.tabButtonText,
-          selectedTab === tab && styles.tabButtonTextActive,
-        ]}>
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const OverviewTab = () => (
-    <View>
-      <View style={styles.summaryCard}>
-        <Text style={styles.cardTitle}>收支概览</Text>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>收入</Text>
-            <Text style={[styles.summaryAmount, {color: '#34C759'}]}>
-              {formatCurrency(totalIncome)}
-            </Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>支出</Text>
-            <Text style={[styles.summaryAmount, {color: '#FF3B30'}]}>
-              {formatCurrency(totalExpense)}
-            </Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>结余</Text>
-            <Text
-              style={[
-                styles.summaryAmount,
-                {color: balance >= 0 ? '#34C759' : '#FF3B30'},
-              ]}>
-              {formatCurrency(balance)}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.chartCard}>
-        <Text style={styles.cardTitle}>收支对比</Text>
-        <View style={styles.barChart}>
-          <View style={styles.barChartRow}>
-            <Text style={styles.barLabel}>收入</Text>
-            <View style={styles.barContainer}>
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    width: totalIncome > 0 ? (totalIncome / Math.max(totalIncome, totalExpense)) * (chartWidth - 100) : 0,
-                    backgroundColor: '#34C759',
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.barValue}>{formatCurrency(totalIncome)}</Text>
-          </View>
-          <View style={styles.barChartRow}>
-            <Text style={styles.barLabel}>支出</Text>
-            <View style={styles.barContainer}>
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    width: totalExpense > 0 ? (totalExpense / Math.max(totalIncome, totalExpense)) * (chartWidth - 100) : 0,
-                    backgroundColor: '#FF3B30',
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.barValue}>{formatCurrency(totalExpense)}</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-
-  const CategoryTab = () => (
-    <View style={styles.chartCard}>
-      <Text style={styles.cardTitle}>分类统计</Text>
-      {categoryStats.length > 0 ? (
-        categoryStats.slice(0, 8).map((stat, index) => (
-          <View key={stat.category} style={styles.categoryItem}>
-            <View style={styles.categoryInfo}>
-              <View
-                style={[
-                  styles.categoryDot,
-                  {backgroundColor: getCategoryColor(stat.category)},
-                ]}
-              />
-              <Text style={styles.categoryName}>{stat.category}</Text>
-            </View>
-            <View style={styles.categoryStats}>
-              <Text style={styles.categoryAmount}>
-                {formatCurrency(stat.expense)}
-              </Text>
-              <Text style={styles.categoryPercentage}>
-                {stat.percentage.toFixed(1)}%
-              </Text>
-            </View>
-          </View>
-        ))
-      ) : (
-        <View style={styles.emptyState}>
-          <Icon name="pie-chart" size={48} color="#C7C7CC" />
-          <Text style={styles.emptyText}>暂无分类数据</Text>
-        </View>
-      )}
-    </View>
-  );
-
-  const TrendTab = () => (
-    <View style={styles.chartCard}>
-      <Text style={styles.cardTitle}>7日趋势</Text>
-      <View style={styles.trendChart}>
-        {trendData.map((item, index) => {
-          const maxAmount = Math.max(
-            ...trendData.map(d => Math.max(d.income, d.expense))
-          );
-          return (
-            <View key={index} style={styles.trendItem}>
-              <View style={styles.trendBars}>
-                <View
-                  style={[
-                    styles.trendBar,
-                    {
-                      height: maxAmount > 0 ? (item.income / maxAmount) * 80 : 0,
-                      backgroundColor: '#34C759',
-                    },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.trendBar,
-                    {
-                      height: maxAmount > 0 ? (item.expense / maxAmount) * 80 : 0,
-                      backgroundColor: '#FF3B30',
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.trendDate}>{item.date}</Text>
-            </View>
-          );
-        })}
-      </View>
-      <View style={styles.legend}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, {backgroundColor: '#34C759'}]} />
-          <Text style={styles.legendText}>收入</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, {backgroundColor: '#FF3B30'}]} />
-          <Text style={styles.legendText}>支出</Text>
-        </View>
-      </View>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
@@ -298,21 +328,65 @@ const StatisticsScreen = () => {
       </View>
 
       <View style={styles.periodSelector}>
-        <PeriodButton period="week" title="本周" />
-        <PeriodButton period="month" title="本月" />
-        <PeriodButton period="year" title="本年" />
+        <PeriodButton
+          period="week"
+          title="本周"
+          selectedPeriod={selectedPeriod}
+          onPress={setSelectedPeriod}
+        />
+        <PeriodButton
+          period="month"
+          title="本月"
+          selectedPeriod={selectedPeriod}
+          onPress={setSelectedPeriod}
+        />
+        <PeriodButton
+          period="year"
+          title="本年"
+          selectedPeriod={selectedPeriod}
+          onPress={setSelectedPeriod}
+        />
       </View>
 
       <View style={styles.tabSelector}>
-        <TabButton tab="overview" title="概览" />
-        <TabButton tab="category" title="分类" />
-        <TabButton tab="trend" title="趋势" />
+        <TabButton
+          tab="overview"
+          title="概览"
+          selectedTab={selectedTab}
+          onPress={setSelectedTab}
+        />
+        <TabButton
+          tab="category"
+          title="分类"
+          selectedTab={selectedTab}
+          onPress={setSelectedTab}
+        />
+        <TabButton
+          tab="trend"
+          title="趋势"
+          selectedTab={selectedTab}
+          onPress={setSelectedTab}
+        />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {selectedTab === 'overview' && <OverviewTab />}
-        {selectedTab === 'category' && <CategoryTab />}
-        {selectedTab === 'trend' && <TrendTab />}
+        {selectedTab === 'overview' && (
+          <OverviewTab
+            totalIncome={totalIncome}
+            totalExpense={totalExpense}
+            balance={balance}
+            chartW={chartWidth}
+            formatAmount={formatCurrency}
+          />
+        )}
+        {selectedTab === 'category' && (
+          <CategoryTab
+            categoryStats={categoryStats}
+            getColor={getCategoryColor}
+            formatAmount={formatCurrency}
+          />
+        )}
+        {selectedTab === 'trend' && <TrendTab trendData={trendData} />}
       </ScrollView>
     </View>
   );
@@ -396,7 +470,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
@@ -406,7 +480,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
@@ -432,6 +506,18 @@ const styles = StyleSheet.create({
   summaryAmount: {
     fontSize: 20,
     fontWeight: '600',
+  },
+  incomeAmount: {
+    color: '#34C759',
+  },
+  expenseAmount: {
+    color: '#FF3B30',
+  },
+  positiveAmount: {
+    color: '#34C759',
+  },
+  negativeAmount: {
+    color: '#FF3B30',
   },
   barChart: {
     marginTop: 8,
@@ -478,18 +564,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  categoryDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  categoryIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  categoryIconText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   categoryName: {
     fontSize: 16,
     color: '#1C1C1E',
     flex: 1,
   },
-  categoryStats: {
+  categoryAmounts: {
     alignItems: 'flex-end',
   },
   categoryAmount: {
@@ -524,6 +617,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 1,
     borderRadius: 4,
   },
+  incomeBar: {
+    backgroundColor: '#34C759',
+  },
+  expenseBar: {
+    backgroundColor: '#FF3B30',
+  },
   trendDate: {
     fontSize: 10,
     color: '#8E8E93',
@@ -543,6 +642,12 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginRight: 6,
+  },
+  incomeLegendDot: {
+    backgroundColor: '#34C759',
+  },
+  expenseLegendDot: {
+    backgroundColor: '#FF3B30',
   },
   legendText: {
     fontSize: 12,

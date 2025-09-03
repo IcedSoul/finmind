@@ -1,6 +1,11 @@
 import axios from 'axios';
-import {Bill, CreateBillRequest, ApiResponse, PaginatedResponse} from '@/types';
-import {API_BASE_URL} from '@/utils/constants';
+import {
+  Bill,
+  CreateBillRequest,
+  ApiResponse,
+  PaginatedResponse,
+} from '@/types';
+import { API_BASE_URL } from '@/utils/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const api = axios.create({
@@ -27,7 +32,7 @@ export const billService = {
     type?: string;
   }): Promise<ApiResponse<PaginatedResponse<Bill>>> {
     try {
-      const response = await api.get('/bills', {params});
+      const response = await api.get('/bills', { params });
       return {
         success: true,
         data: response.data,
@@ -55,7 +60,10 @@ export const billService = {
     }
   },
 
-  async updateBill(id: string, data: Partial<CreateBillRequest>): Promise<ApiResponse<Bill>> {
+  async updateBill(
+    id: string,
+    data: Partial<CreateBillRequest>,
+  ): Promise<ApiResponse<Bill>> {
     try {
       const response = await api.put(`/bills/${id}`, data);
       return {
@@ -84,9 +92,11 @@ export const billService = {
     }
   },
 
-  async syncBills(bills: Bill[]): Promise<ApiResponse<{synced_count: number}>> {
+  async syncBills(
+    bills: Bill[],
+  ): Promise<ApiResponse<{ synced_count: number }>> {
     try {
-      const response = await api.post('/bills/sync', {bills});
+      const response = await api.post('/bills/sync', { bills });
       return {
         success: true,
         data: response.data,

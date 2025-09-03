@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,12 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
-import {useNavigation} from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import {RootState} from '@/types';
-import {useForm} from '@/hooks';
-import {validateEmail, validatePassword} from '@/utils';
+import { RootState } from '@/types';
+import { useForm } from '@/hooks';
+import { validateEmail, validatePassword } from '@/utils';
 
 interface LoginForm {
   email: string;
@@ -24,11 +24,10 @@ interface LoginForm {
 
 const LoginScreen = () => {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const {loading, error} = useSelector((state: RootState) => state.auth);
+  const { loading, error } = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
 
-  const {values, errors, touched, handleChange, handleBlur, validate} =
+  const { values, errors, touched, handleChange, handleBlur, validate } =
     useForm<LoginForm>({
       email: '',
       password: '',
@@ -53,8 +52,8 @@ const LoginScreen = () => {
       // 这里应该调用 authSlice 中的 login action
       // await dispatch(login({email: values.email, password: values.password}));
       console.log('Login attempt:', values);
-    } catch (error: any) {
-      Alert.alert('登录失败', error.message || '请检查网络连接');
+    } catch (loginError: any) {
+      Alert.alert('登录失败', loginError.message || '请检查网络连接');
     }
   };
 
@@ -65,10 +64,12 @@ const LoginScreen = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.header}>
           <Text style={styles.title}>FinMind</Text>
           <Text style={styles.subtitle}>全记账</Text>
@@ -77,7 +78,12 @@ const LoginScreen = () => {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Icon name="mail" size={20} color="#8E8E93" style={styles.inputIcon} />
+            <Icon
+              name="mail"
+              size={20}
+              color="#8E8E93"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={[
                 styles.input,
@@ -98,7 +104,12 @@ const LoginScreen = () => {
           )}
 
           <View style={styles.inputContainer}>
-            <Icon name="lock" size={20} color="#8E8E93" style={styles.inputIcon} />
+            <Icon
+              name="lock"
+              size={20}
+              color="#8E8E93"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={[
                 styles.input,
@@ -115,7 +126,8 @@ const LoginScreen = () => {
             />
             <TouchableOpacity
               style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}>
+              onPress={() => setShowPassword(!showPassword)}
+            >
               <Icon
                 name={showPassword ? 'eye-off' : 'eye'}
                 size={20}
@@ -132,7 +144,8 @@ const LoginScreen = () => {
           <TouchableOpacity
             style={[styles.loginButton, loading && styles.loginButtonDisabled]}
             onPress={handleLogin}
-            disabled={loading}>
+            disabled={loading}
+          >
             <Text style={styles.loginButtonText}>
               {loading ? '登录中...' : '登录'}
             </Text>

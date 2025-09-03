@@ -37,38 +37,38 @@ const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
 }) => {
   const getButtonStyle = () => {
-    const baseStyle = [styles.button, styles[size]];
-    
+    const baseStyle = [styles.button, (styles as any)[size]];
+
     if (fullWidth) {
       baseStyle.push(styles.fullWidth);
     }
-    
+
     if (disabled || loading) {
       baseStyle.push(styles.disabled);
     } else {
-      baseStyle.push(styles[variant]);
+      baseStyle.push((styles as any)[variant]);
     }
-    
+
     if (style) {
       baseStyle.push(style);
     }
-    
+
     return baseStyle;
   };
 
   const getTextStyle = () => {
-    const baseStyle = [styles.text, styles[`${size}Text`]];
-    
+    const baseStyle = [styles.text, (styles as any)[`${size}Text`]];
+
     if (disabled || loading) {
       baseStyle.push(styles.disabledText);
     } else {
-      baseStyle.push(styles[`${variant}Text`]);
+      baseStyle.push((styles as any)[`${variant}Text`]);
     }
-    
+
     if (textStyle) {
       baseStyle.push(textStyle);
     }
-    
+
     return baseStyle;
   };
 
@@ -95,9 +95,11 @@ const Button: React.FC<ButtonProps> = ({
 
     const iconElement = icon && (
       <Icon
-        name={icon}
+        name={icon as any}
         size={getIconSize()}
-        color={disabled ? '#C7C7CC' : variant === 'secondary' ? '#007AFF' : '#FFFFFF'}
+        color={
+          disabled ? '#C7C7CC' : variant === 'secondary' ? '#007AFF' : '#FFFFFF'
+        }
         style={iconPosition === 'left' ? styles.iconLeft : styles.iconRight}
       />
     );
@@ -116,7 +118,8 @@ const Button: React.FC<ButtonProps> = ({
       style={getButtonStyle()}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.7}>
+      activeOpacity={0.7}
+    >
       {renderContent()}
     </TouchableOpacity>
   );

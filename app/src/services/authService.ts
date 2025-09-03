@@ -1,6 +1,6 @@
 import axios from 'axios';
-import {LoginRequest, RegisterRequest, ApiResponse, User} from '@/types';
-import {API_BASE_URL} from '@/utils/constants';
+import { LoginRequest, RegisterRequest, ApiResponse, User } from '@/types';
+import { API_BASE_URL } from '@/utils/constants';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,7 +11,9 @@ const api = axios.create({
 });
 
 export const authService = {
-  async login(credentials: LoginRequest): Promise<ApiResponse<{token: string; user: User}>> {
+  async login(
+    credentials: LoginRequest,
+  ): Promise<ApiResponse<{ token: string; user: User }>> {
     try {
       const response = await api.post('/auth/login', credentials);
       return {
@@ -26,7 +28,9 @@ export const authService = {
     }
   },
 
-  async register(userData: RegisterRequest): Promise<ApiResponse<{token: string; message: string}>> {
+  async register(
+    userData: RegisterRequest,
+  ): Promise<ApiResponse<{ token: string; message: string }>> {
     try {
       const response = await api.post('/auth/register', userData);
       return {

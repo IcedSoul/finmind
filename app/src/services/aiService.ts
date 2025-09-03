@@ -1,5 +1,3 @@
-import {Bill} from '@/types';
-
 export interface ParsedBillData {
   time: string;
   channel: string;
@@ -22,7 +20,7 @@ class AIService {
   async initializeModel(): Promise<boolean> {
     try {
       console.log('Initializing AI model...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(resolve, 1000));
       this.isModelLoaded = true;
       console.log('AI model initialized successfully');
       return true;
@@ -32,17 +30,21 @@ class AIService {
     }
   }
 
-  async parseBillFile(fileContent: string, fileType: 'csv' | 'excel' | 'pdf'): Promise<AIParseResult> {
+  async parseBillFile(
+    fileContent: string,
+    fileType: 'csv' | 'excel' | 'pdf',
+  ): Promise<AIParseResult> {
     try {
       if (!this.isModelLoaded) {
         await this.initializeModel();
       }
 
       console.log(`Parsing ${fileType} file with AI model...`);
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      const mockParsedData: ParsedBillData[] = this.generateMockData(fileContent);
+      await new Promise<void>(resolve => setTimeout(resolve, 2000));
+
+      const mockParsedData: ParsedBillData[] =
+        this.generateMockData(fileContent);
 
       return {
         success: true,
@@ -64,8 +66,8 @@ class AIService {
       }
 
       console.log('Parsing text content with AI model...');
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      await new Promise<void>(resolve => setTimeout(resolve, 1500));
 
       const mockParsedData: ParsedBillData[] = this.extractBillsFromText(text);
 
@@ -82,7 +84,7 @@ class AIService {
     }
   }
 
-  private generateMockData(fileContent: string): ParsedBillData[] {
+  private generateMockData(_fileContent: string): ParsedBillData[] {
     const mockData: ParsedBillData[] = [
       {
         time: '2024-01-15T12:30:00Z',
@@ -133,17 +135,28 @@ class AIService {
   }
 
   private containsBillInfo(line: string): boolean {
-    const keywords = ['支付', '收入', '转账', '消费', '¥', '元', '支付宝', '微信'];
+    const keywords = [
+      '支付',
+      '收入',
+      '转账',
+      '消费',
+      '¥',
+      '元',
+      '支付宝',
+      '微信',
+    ];
     return keywords.some(keyword => line.includes(keyword));
   }
 
   private parseBillLine(line: string): ParsedBillData | null {
-    const amountMatch = line.match(/[¥￥]?([0-9]+\.?[0-9]*)/);;
+    const amountMatch = line.match(/[¥￥]?([0-9]+\.?[0-9]*)/);
     const timeMatch = line.match(/(\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|\d{2}:\d{2})/);
-    
+
     if (amountMatch) {
       return {
-        time: timeMatch ? this.normalizeTime(timeMatch[1]) : new Date().toISOString(),
+        time: timeMatch
+          ? this.normalizeTime(timeMatch[1])
+          : new Date().toISOString(),
         channel: this.extractChannel(line),
         merchant: this.extractMerchant(line),
         type: this.determineType(line),
@@ -187,7 +200,7 @@ class AIService {
   private determineType(line: string): 'income' | 'expense' {
     const incomeKeywords = ['收入', '工资', '转入', '退款'];
     const expenseKeywords = ['支付', '消费', '转出', '购买'];
-    
+
     if (incomeKeywords.some(keyword => line.includes(keyword))) {
       return 'income';
     }
@@ -199,12 +212,12 @@ class AIService {
 
   private categorizeTransaction(line: string): string {
     const categories = {
-      '餐饮': ['餐', '咖啡', '星巴克', '麦当劳', '美食'],
-      '交通': ['滴滴', '出租', '地铁', '公交', '打车'],
-      '购物': ['淘宝', '京东', '购物', '商城'],
-      '娱乐': ['电影', '游戏', '娱乐'],
-      '医疗': ['医院', '药店', '医疗'],
-      '工资': ['工资', '薪水', '收入'],
+      餐饮: ['餐', '咖啡', '星巴克', '麦当劳', '美食'],
+      交通: ['滴滴', '出租', '地铁', '公交', '打车'],
+      购物: ['淘宝', '京东', '购物', '商城'],
+      娱乐: ['电影', '游戏', '娱乐'],
+      医疗: ['医院', '药店', '医疗'],
+      工资: ['工资', '薪水', '收入'],
     };
 
     for (const [category, keywords] of Object.entries(categories)) {
@@ -215,7 +228,7 @@ class AIService {
     return '其他';
   }
 
-  getModelStatus(): {loaded: boolean; version: string} {
+  getModelStatus(): { loaded: boolean; version: string } {
     return {
       loaded: this.isModelLoaded,
       version: '1.0.0-mock',

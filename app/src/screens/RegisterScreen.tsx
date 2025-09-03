@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,12 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
-import {useNavigation} from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import {RootState} from '@/types';
-import {useForm} from '@/hooks';
-import {validateEmail, validatePassword} from '@/utils';
+import { RootState } from '@/types';
+import { useForm } from '@/hooks';
+import { validateEmail, validatePassword } from '@/utils';
 
 interface RegisterForm {
   name: string;
@@ -26,12 +26,11 @@ interface RegisterForm {
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const {loading, error} = useSelector((state: RootState) => state.auth);
+  const { loading, error } = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const {values, errors, touched, handleChange, handleBlur, validate} =
+  const { values, errors, touched, handleChange, handleBlur, validate } =
     useForm<RegisterForm>({
       name: '',
       email: '',
@@ -69,10 +68,10 @@ const RegisterScreen = () => {
       // await dispatch(register({name: values.name, email: values.email, password: values.password}));
       console.log('Register attempt:', values);
       Alert.alert('注册成功', '请登录您的账户', [
-        {text: '确定', onPress: () => navigation.goBack()},
+        { text: '确定', onPress: () => navigation.goBack() },
       ]);
-    } catch (error: any) {
-      Alert.alert('注册失败', error.message || '请检查网络连接');
+    } catch (registerError: any) {
+      Alert.alert('注册失败', registerError.message || '请检查网络连接');
     }
   };
 
@@ -83,10 +82,12 @@ const RegisterScreen = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={navigateToLogin}>
             <Icon name="arrow-left" size={24} color="#007AFF" />
@@ -97,7 +98,12 @@ const RegisterScreen = () => {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Icon name="user" size={20} color="#8E8E93" style={styles.inputIcon} />
+            <Icon
+              name="user"
+              size={20}
+              color="#8E8E93"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={[
                 styles.input,
@@ -117,7 +123,12 @@ const RegisterScreen = () => {
           )}
 
           <View style={styles.inputContainer}>
-            <Icon name="mail" size={20} color="#8E8E93" style={styles.inputIcon} />
+            <Icon
+              name="mail"
+              size={20}
+              color="#8E8E93"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={[
                 styles.input,
@@ -138,7 +149,12 @@ const RegisterScreen = () => {
           )}
 
           <View style={styles.inputContainer}>
-            <Icon name="lock" size={20} color="#8E8E93" style={styles.inputIcon} />
+            <Icon
+              name="lock"
+              size={20}
+              color="#8E8E93"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={[
                 styles.input,
@@ -155,7 +171,8 @@ const RegisterScreen = () => {
             />
             <TouchableOpacity
               style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}>
+              onPress={() => setShowPassword(!showPassword)}
+            >
               <Icon
                 name={showPassword ? 'eye-off' : 'eye'}
                 size={20}
@@ -168,7 +185,12 @@ const RegisterScreen = () => {
           )}
 
           <View style={styles.inputContainer}>
-            <Icon name="lock" size={20} color="#8E8E93" style={styles.inputIcon} />
+            <Icon
+              name="lock"
+              size={20}
+              color="#8E8E93"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={[
                 styles.input,
@@ -187,7 +209,8 @@ const RegisterScreen = () => {
             />
             <TouchableOpacity
               style={styles.eyeIcon}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
               <Icon
                 name={showConfirmPassword ? 'eye-off' : 'eye'}
                 size={20}
@@ -207,7 +230,8 @@ const RegisterScreen = () => {
               loading && styles.registerButtonDisabled,
             ]}
             onPress={handleRegister}
-            disabled={loading}>
+            disabled={loading}
+          >
             <Text style={styles.registerButtonText}>
               {loading ? '注册中...' : '注册'}
             </Text>

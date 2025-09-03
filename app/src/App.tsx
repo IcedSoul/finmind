@@ -1,12 +1,12 @@
-import React, {useEffect} from 'react';
-import {StatusBar, Platform} from 'react-native';
-import {NavigationContainer} from '@react-navigation/native';
-import {Provider} from 'react-redux';
-import {PersistGate} from 'redux-persist/integration/react';
-import {store, persistor} from './store';
+import React, { useEffect } from 'react';
+import { StatusBar, Platform } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { store, persistor } from './store';
 import Navigation from './navigation';
-import {Loading} from './components';
-import {initDatabase} from './services/database';
+import Loading from './components/Loading';
+import { initDatabase } from './services/database';
 
 const App: React.FC = () => {
   useEffect(() => {

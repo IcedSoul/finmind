@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Bill } from '@/types';
 
 export const formatCurrency = (amount: number): string => {
   return `¥${amount.toFixed(2)}`;
@@ -66,7 +67,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number,
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
+  let timeout: any;
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
@@ -96,7 +97,6 @@ export const storage = {
       console.error('Storage setItem error:', error);
     }
   },
-
   async getItem<T>(key: string): Promise<T | null> {
     try {
       const jsonValue = await AsyncStorage.getItem(key);
@@ -106,7 +106,6 @@ export const storage = {
       return null;
     }
   },
-
   async removeItem(key: string): Promise<void> {
     try {
       await AsyncStorage.removeItem(key);
@@ -114,7 +113,6 @@ export const storage = {
       console.error('Storage removeItem error:', error);
     }
   },
-
   async clear(): Promise<void> {
     try {
       await AsyncStorage.clear();
@@ -124,47 +122,53 @@ export const storage = {
   },
 };
 
-export const groupBillsByDate = (bills: any[]): {[key: string]: any[]} => {
-  return bills.reduce((groups, bill) => {
-    const date = formatDate(bill.time);
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(bill);
-    return groups;
-  }, {});
+export const groupBillsByDate = (bills: Bill[]): { [key: string]: Bill[] } => {
+  return bills.reduce(
+    (groups, bill) => {
+      const date = formatDate(bill.time);
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(bill);
+      return groups;
+    },
+    {} as { [key: string]: Bill[] },
+  );
 };
 
-export const calculateTotalAmount = (bills: any[], type?: 'income' | 'expense'): number => {
+export const calculateTotalAmount = (
+  bills: Bill[],
+  type?: 'income' | 'expense',
+): number => {
   return bills
     .filter(bill => !type || bill.type === type)
     .reduce((total, bill) => total + bill.amount, 0);
 };
 
 export const getCategoryIcon = (category: string): string => {
-  const iconMap: {[key: string]: string} = {
-    '餐饮': 'restaurant',
-    '交通': 'car',
-    '购物': 'shopping-bag',
-    '娱乐': 'music',
-    '医疗': 'heart',
-    '教育': 'book',
-    '工资': 'dollar-sign',
-    '其他': 'more-horizontal',
+  const iconMap: { [key: string]: string } = {
+    餐饮: 'restaurant',
+    交通: 'car',
+    购物: 'shopping-bag',
+    娱乐: 'music',
+    医疗: 'heart',
+    教育: 'book',
+    工资: 'dollar-sign',
+    其他: 'more-horizontal',
   };
   return iconMap[category] || 'more-horizontal';
 };
 
 export const getCategoryColor = (category: string): string => {
-  const colorMap: {[key: string]: string} = {
-    '餐饮': '#FF6B6B',
-    '交通': '#4ECDC4',
-    '购物': '#45B7D1',
-    '娱乐': '#96CEB4',
-    '医疗': '#FFEAA7',
-    '教育': '#DDA0DD',
-    '工资': '#98D8C8',
-    '其他': '#F7DC6F',
+  const colorMap: { [key: string]: string } = {
+    餐饮: '#FF6B6B',
+    交通: '#4ECDC4',
+    购物: '#45B7D1',
+    娱乐: '#96CEB4',
+    医疗: '#FFEAA7',
+    教育: '#DDA0DD',
+    工资: '#98D8C8',
+    其他: '#F7DC6F',
   };
   return colorMap[category] || '#F7DC6F';
 };
@@ -180,37 +184,43 @@ export const parseFileContent = async (uri: string): Promise<string> => {
   }
 };
 
-export const exportToCSV = (bills: any[]): string => {
+export const exportToCSV = (bills: Bill[]): string => {
   const headers = ['时间', '渠道', '商户', '类型', '金额', '分类'];
   const csvContent = [
     headers.join(','),
-    ...bills.map(bill => [
-      formatDateTime(bill.time),
-      bill.channel,
-      bill.merchant,
-      bill.type === 'income' ? '收入' : '支出',
-      bill.amount,
-      bill.category,
-    ].join(',')),
+    ...bills.map(bill =>
+      [
+        formatDateTime(bill.time),
+        bill.channel,
+        bill.merchant,
+        bill.type === 'income' ? '收入' : '支出',
+        bill.amount,
+        bill.category,
+      ].join(','),
+    ),
   ].join('\n');
-  
+
   return csvContent;
 };
 
-export const getMonthRange = (date: Date = new Date()): {start: Date; end: Date} => {
+export const getMonthRange = (
+  date: Date = new Date(),
+): { start: Date; end: Date } => {
   const start = new Date(date.getFullYear(), date.getMonth(), 1);
   const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
-  return {start, end};
+  return { start, end };
 };
 
-export const getWeekRange = (date: Date = new Date()): {start: Date; end: Date} => {
+export const getWeekRange = (
+  date: Date = new Date(),
+): { start: Date; end: Date } => {
   const start = new Date(date);
   start.setDate(date.getDate() - date.getDay());
   start.setHours(0, 0, 0, 0);
-  
+
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
   end.setHours(23, 59, 59, 999);
-  
-  return {start, end};
+
+  return { start, end };
 };

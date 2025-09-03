@@ -10,13 +10,14 @@ export interface User {
 export interface Bill {
   id: string;
   userId: string;
+  time: string;
+  channel: string;
+  merchant: string;
   type: 'income' | 'expense';
   amount: number;
   category: string;
-  merchant: string;
   description?: string;
-  time: string;
-  synced: boolean;
+  synced?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,10 +25,8 @@ export interface Bill {
 export interface Category {
   id: string;
   name: string;
-  type: 'income' | 'expense';
   icon: string;
   color: string;
-  isDefault: boolean;
 }
 
 export interface AuthState {
@@ -36,6 +35,14 @@ export interface AuthState {
   token: string | null;
   loading: boolean;
   error: string | null;
+}
+
+export interface BillState {
+  bills: Bill[];
+  loading: boolean;
+  error: string | null;
+  totalCount: number;
+  currentPage: number;
 }
 
 export interface BillsState {
@@ -171,12 +178,36 @@ export type MainTabParamList = {
 
 export type BillStackParamList = {
   BillsList: undefined;
-  AddBill: {bill?: Bill};
-  EditBill: {bill: Bill};
+  AddBill: { bill?: Bill };
+  EditBill: { bill: Bill };
   ImportBill: undefined;
 };
 
 export interface NavigationProps {
   navigation: any;
   route: any;
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface BillState {
+  bills: Bill[];
+  loading: boolean;
+  error: string | null;
+  totalCount: number;
+  currentPage: number;
+  hasMore: boolean;
 }

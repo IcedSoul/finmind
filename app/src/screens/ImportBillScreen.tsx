@@ -1,126 +1,48 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
   Alert,
   FlatList,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
-import {useDispatch} from 'react-redux';
-import {useNavigation} from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import DocumentPicker from 'react-native-document-picker';
-import {Bill} from '@/types';
-import {createBill} from '@/store/slices/billsSlice';
-import {AIService} from '@/services/aiService';
-import {formatCurrency, getCategoryIcon, getCategoryColor} from '@/utils';
+import * as DocumentPicker from 'expo-document-picker';
+import { Bill } from '@/types';
+import { createBill } from '@/store/slices/billsSlice';
+import { aiService } from '@/services/aiService';
+import { formatCurrency, getCategoryIcon, getCategoryColor } from '@/utils';
 
 interface ParsedBill extends Omit<Bill, 'id' | 'userId' | 'synced'> {
   selected: boolean;
 }
 
-const ImportBillScreen = () => {
-  const navigation = useNavigation();
-  const dispatch = useDispatch();
-  
-  const [parsedBills, setParsedBills] = useState<ParsedBill[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [importing, setImporting] = useState(false);
+const BillItem = ({
+  item,
+  index,
+  onToggle,
+}: {
+  item: ParsedBill;
+  index: number;
+  onToggle: (index: number) => void;
+}) => {
+  const getCategoryIconStyle = () => ({
+    ...styles.categoryIcon,
+    backgroundColor: getCategoryColor(item.category),
+  });
 
-  const handleFileImport = async () => {
-    try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.images, DocumentPicker.types.pdf, DocumentPicker.types.plainText],
-        allowMultiSelection: false,
-      });
-
-      if (result && result[0]) {
-        setLoading(true);
-        const file = result[0];
-        
-        try {
-          const parseResult = await AIService.parseFileContent(file);
-          
-          if (parseResult.success && parseResult.data) {
-            const bills = Array.isArray(parseResult.data) ? parseResult.data : [parseResult.data];
-            const billsWithSelection = bills.map(bill => ({
-              ...bill,
-              selected: true,
-              time: bill.time || new Date().toISOString(),
-            }));
-            setParsedBills(billsWithSelection);
-            Alert.alert('成功', `识别到 ${bills.length} 条账单记录`);
-          } else {
-            Alert.alert('提示', '未能从文件中识别出账单信息');
-          }
-        } catch (error) {
-          Alert.alert('错误', '文件解析失败，请检查文件格式');
-        }
-      }
-    } catch (error) {
-      if (!DocumentPicker.isCancel(error)) {
-        Alert.alert('错误', '文件选择失败');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleBillSelection = (index: number) => {
-    setParsedBills(prev => 
-      prev.map((bill, i) => 
-        i === index ? {...bill, selected: !bill.selected} : bill
-      )
-    );
-  };
-
-  const selectAll = () => {
-    setParsedBills(prev => prev.map(bill => ({...bill, selected: true})));
-  };
-
-  const deselectAll = () => {
-    setParsedBills(prev => prev.map(bill => ({...bill, selected: false})));
-  };
-
-  const handleImport = async () => {
-    const selectedBills = parsedBills.filter(bill => bill.selected);
-    
-    if (selectedBills.length === 0) {
-      Alert.alert('提示', '请至少选择一条账单记录');
-      return;
-    }
-
-    setImporting(true);
-    try {
-      for (const bill of selectedBills) {
-        const {selected, ...billData} = bill;
-        await dispatch(createBill(billData) as any);
-      }
-      
-      Alert.alert('成功', `已导入 ${selectedBills.length} 条账单记录`, [
-        {text: '确定', onPress: () => navigation.goBack()}
-      ]);
-    } catch (error) {
-      Alert.alert('错误', '导入失败，请重试');
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const BillItem = ({item, index}: {item: ParsedBill; index: number}) => (
+  return (
     <TouchableOpacity
       style={[styles.billItem, item.selected && styles.billItemSelected]}
-      onPress={() => toggleBillSelection(index)}>
+      onPress={() => onToggle(index)}
+    >
       <View style={styles.billItemContent}>
         <View style={styles.billItemLeft}>
-          <View
-            style={[
-              styles.categoryIcon,
-              {backgroundColor: getCategoryColor(item.category)},
-            ]}>
+          <View style={getCategoryIconStyle()}>
             <Icon
               name={getCategoryIcon(item.category)}
               size={16}
@@ -137,38 +59,130 @@ const ImportBillScreen = () => {
             )}
           </View>
         </View>
-        
+
         <View style={styles.billItemRight}>
           <Text
             style={[
               styles.amount,
-              item.type === 'income' ? styles.incomeAmount : styles.expenseAmount,
-            ]}>
-            {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
+              item.type === 'income'
+                ? styles.incomeAmount
+                : styles.expenseAmount,
+            ]}
+          >
+            {item.type === 'income' ? '+' : '-'}
+            {formatCurrency(item.amount)}
           </Text>
           <Text style={styles.time}>
             {new Date(item.time).toLocaleDateString('zh-CN')}
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.checkbox}>
-        {item.selected && (
-          <Icon name="check" size={16} color="#007AFF" />
-        )}
+        {item.selected && <Icon name="check" size={16} color="#007AFF" />}
       </View>
     </TouchableOpacity>
   );
+};
 
-  const EmptyState = () => (
-    <View style={styles.emptyState}>
-      <Icon name="file-text" size={64} color="#C7C7CC" />
-      <Text style={styles.emptyTitle}>暂无账单数据</Text>
-      <Text style={styles.emptyDescription}>
-        选择文件导入账单，支持图片、PDF和文本文件
-      </Text>
-    </View>
-  );
+const EmptyState = () => (
+  <View style={styles.emptyState}>
+    <Icon name="file-text" size={64} color="#C7C7CC" />
+    <Text style={styles.emptyTitle}>暂无账单数据</Text>
+    <Text style={styles.emptyDescription}>
+      选择文件导入账单，支持图片、PDF和文本文件
+    </Text>
+  </View>
+);
+
+const ImportBillScreen = () => {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+
+  const [parsedBills, setParsedBills] = useState<ParsedBill[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  const handleFileImport = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf', 'text/plain'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        setLoading(true);
+        const file = result.assets[0];
+
+        try {
+          const parseResult = await aiService.parseTextContent(file.uri);
+
+          if (parseResult.success && parseResult.data) {
+            const bills = Array.isArray(parseResult.data)
+              ? parseResult.data
+              : [parseResult.data];
+            const billsWithSelection = bills.map((bill: any) => ({
+              ...bill,
+              selected: true,
+              time: bill.time || new Date().toISOString(),
+            }));
+            setParsedBills(billsWithSelection);
+            Alert.alert('成功', `识别到 ${bills.length} 条账单记录`);
+          } else {
+            Alert.alert('提示', '未能从文件中识别出账单信息');
+          }
+        } catch (error) {
+          Alert.alert('错误', '文件解析失败，请检查文件格式');
+        }
+      }
+    } catch (error) {
+      Alert.alert('错误', '文件选择失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleBillSelection = (index: number) => {
+    setParsedBills(prev =>
+      prev.map((bill, i) =>
+        i === index ? { ...bill, selected: !bill.selected } : bill,
+      ),
+    );
+  };
+
+  const selectAll = () => {
+    setParsedBills(prev => prev.map(bill => ({ ...bill, selected: true })));
+  };
+
+  const deselectAll = () => {
+    setParsedBills(prev => prev.map(bill => ({ ...bill, selected: false })));
+  };
+
+  const handleImport = async () => {
+    const selectedBills = parsedBills.filter(bill => bill.selected);
+
+    if (selectedBills.length === 0) {
+      Alert.alert('提示', '请至少选择一条账单记录');
+      return;
+    }
+
+    setImporting(true);
+    try {
+      for (const bill of selectedBills) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { selected, ...billData } = bill;
+        await dispatch(createBill(billData) as any);
+      }
+
+      Alert.alert('成功', `已导入 ${selectedBills.length} 条账单记录`, [
+        { text: '确定', onPress: () => navigation.goBack() },
+      ]);
+    } catch (error) {
+      Alert.alert('错误', '导入失败，请重试');
+    } finally {
+      setImporting(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -177,15 +191,19 @@ const ImportBillScreen = () => {
           <Icon name="arrow-left" size={24} color="#1C1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>导入账单</Text>
-        <View style={{width: 24}} />
+        <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.content}>
         <View style={styles.importSection}>
           <TouchableOpacity
-            style={[styles.importButton, loading && styles.importButtonDisabled]}
+            style={[
+              styles.importButton,
+              loading && styles.importButtonDisabled,
+            ]}
             onPress={handleFileImport}
-            disabled={loading}>
+            disabled={loading}
+          >
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
@@ -195,7 +213,7 @@ const ImportBillScreen = () => {
               {loading ? '解析中...' : '选择文件导入'}
             </Text>
           </TouchableOpacity>
-          
+
           <Text style={styles.supportedFormats}>
             支持格式：图片、PDF、文本文件
           </Text>
@@ -205,25 +223,34 @@ const ImportBillScreen = () => {
           <View style={styles.billsSection}>
             <View style={styles.billsHeader}>
               <Text style={styles.billsTitle}>
-                识别结果 ({parsedBills.filter(b => b.selected).length}/{parsedBills.length})
+                识别结果 ({parsedBills.filter(b => b.selected).length}/
+                {parsedBills.length})
               </Text>
               <View style={styles.selectionButtons}>
                 <TouchableOpacity
                   style={styles.selectionButton}
-                  onPress={selectAll}>
+                  onPress={selectAll}
+                >
                   <Text style={styles.selectionButtonText}>全选</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.selectionButton}
-                  onPress={deselectAll}>
+                  onPress={deselectAll}
+                >
                   <Text style={styles.selectionButtonText}>取消</Text>
                 </TouchableOpacity>
               </View>
             </View>
-            
+
             <FlatList
               data={parsedBills}
-              renderItem={({item, index}) => <BillItem item={item} index={index} />}
+              renderItem={({ item, index }) => (
+                <BillItem
+                  item={item}
+                  index={index}
+                  onToggle={toggleBillSelection}
+                />
+              )}
               keyExtractor={(_, index) => index.toString()}
               style={styles.billsList}
               showsVerticalScrollIndicator={false}
@@ -243,7 +270,10 @@ const ImportBillScreen = () => {
                 styles.importConfirmButtonDisabled,
             ]}
             onPress={handleImport}
-            disabled={importing || parsedBills.filter(b => b.selected).length === 0}>
+            disabled={
+              importing || parsedBills.filter(b => b.selected).length === 0
+            }
+          >
             {importing ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
@@ -278,6 +308,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1C1C1E',
+  },
+  headerSpacer: {
+    width: 24,
   },
   content: {
     flex: 1,

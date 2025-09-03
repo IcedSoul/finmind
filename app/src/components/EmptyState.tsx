@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ViewStyle,
-} from 'react-native';
+import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import Button from './Button';
 
@@ -31,13 +26,11 @@ const EmptyState: React.FC<EmptyStateProps> = ({
         <View style={styles.iconContainer}>
           <Icon name={icon} size={64} color="#C7C7CC" />
         </View>
-        
+
         <Text style={styles.title}>{title}</Text>
-        
-        {description && (
-          <Text style={styles.description}>{description}</Text>
-        )}
-        
+
+        {description && <Text style={styles.description}>{description}</Text>}
+
         {actionText && onAction && (
           <Button
             title={actionText}

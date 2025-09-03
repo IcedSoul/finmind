@@ -7,7 +7,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import {formatCurrency} from '@/utils';
+import { formatCurrency } from '@/utils';
 
 interface StatCardProps {
   title: string;
@@ -45,27 +45,25 @@ const StatCard: React.FC<StatCardProps> = ({
   };
 
   const renderContent = () => (
-    <View style={[styles.container, {backgroundColor}, style]}>
+    <View style={[styles.container, { backgroundColor }, style]}>
       <View style={styles.header}>
         <View style={styles.titleSection}>
           {icon && (
-            <View style={[styles.iconContainer, {backgroundColor: color + '20'}]}>
+            <View
+              style={[styles.iconContainer, { backgroundColor: color + '20' }]}
+            >
               <Icon name={icon} size={20} color={color} />
             </View>
           )}
           <Text style={styles.title}>{title}</Text>
         </View>
-        
-        {onPress && (
-          <Icon name="chevron-right" size={16} color="#C7C7CC" />
-        )}
+
+        {onPress && <Icon name="chevron-right" size={16} color="#C7C7CC" />}
       </View>
-      
+
       <View style={styles.content}>
-        <Text style={[styles.amount, {color}]}>
-          {formatCurrency(amount)}
-        </Text>
-        
+        <Text style={[styles.amount, { color }]}>{formatCurrency(amount)}</Text>
+
         {showTrend && trendValue !== undefined && (
           <View style={styles.trendContainer}>
             {getTrendIcon() && (
@@ -76,7 +74,7 @@ const StatCard: React.FC<StatCardProps> = ({
                 style={styles.trendIcon}
               />
             )}
-            <Text style={[styles.trendText, {color: getTrendColor()}]}>
+            <Text style={[styles.trendText, { color: getTrendColor() }]}>
               {Math.abs(trendValue).toFixed(1)}%
             </Text>
           </View>
@@ -101,7 +99,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,

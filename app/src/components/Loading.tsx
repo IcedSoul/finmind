@@ -40,7 +40,8 @@ const Loading: React.FC<LoadingProps> = ({
         visible={visible}
         transparent
         animationType="fade"
-        statusBarTranslucent>
+        statusBarTranslucent
+      >
         <View style={styles.overlay}>
           <View style={styles.overlayContent}>
             <ActivityIndicator size={size} color={color} />
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 120,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 5,

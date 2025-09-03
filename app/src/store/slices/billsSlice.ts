@@ -1,6 +1,6 @@
-import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
-import {BillState, Bill, CreateBillRequest, PaginatedResponse} from '@/types';
-import {billService} from '@/services/billService';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { BillState, Bill, CreateBillRequest, PaginatedResponse } from '@/types';
+import { billService } from '@/services/billService';
 
 const initialState: BillState = {
   bills: [],
@@ -8,11 +8,15 @@ const initialState: BillState = {
   error: null,
   totalCount: 0,
   currentPage: 1,
+  hasMore: true,
 };
 
 export const fetchBills = createAsyncThunk(
   'bills/fetchBills',
-  async (params: {page?: number; limit?: number; category?: string; type?: string}, {rejectWithValue}) => {
+  async (
+    params: { page?: number; limit?: number; category?: string; type?: string },
+    { rejectWithValue },
+  ) => {
     try {
       const response = await billService.getBills(params);
       if (response.success && response.data) {
@@ -27,7 +31,7 @@ export const fetchBills = createAsyncThunk(
 
 export const createBill = createAsyncThunk(
   'bills/createBill',
-  async (billData: CreateBillRequest, {rejectWithValue}) => {
+  async (billData: CreateBillRequest, { rejectWithValue }) => {
     try {
       const response = await billService.createBill(billData);
       if (response.success && response.data) {
@@ -42,7 +46,10 @@ export const createBill = createAsyncThunk(
 
 export const updateBill = createAsyncThunk(
   'bills/updateBill',
-  async ({id, data}: {id: string; data: Partial<CreateBillRequest>}, {rejectWithValue}) => {
+  async (
+    { id, data }: { id: string; data: Partial<CreateBillRequest> },
+    { rejectWithValue },
+  ) => {
     try {
       const response = await billService.updateBill(id, data);
       if (response.success && response.data) {
@@ -57,7 +64,7 @@ export const updateBill = createAsyncThunk(
 
 export const deleteBill = createAsyncThunk(
   'bills/deleteBill',
-  async (id: string, {rejectWithValue}) => {
+  async (id: string, { rejectWithValue }) => {
     try {
       const response = await billService.deleteBill(id);
       if (response.success) {
@@ -72,7 +79,7 @@ export const deleteBill = createAsyncThunk(
 
 export const syncBills = createAsyncThunk(
   'bills/syncBills',
-  async (bills: Bill[], {rejectWithValue}) => {
+  async (bills: Bill[], { rejectWithValue }) => {
     try {
       const response = await billService.syncBills(bills);
       if (response.success) {
@@ -97,7 +104,9 @@ const billsSlice = createSlice({
       state.totalCount += 1;
     },
     updateLocalBill: (state, action: PayloadAction<Bill>) => {
-      const index = state.bills.findIndex(bill => bill.id === action.payload.id);
+      const index = state.bills.findIndex(
+        bill => bill.id === action.payload.id,
+      );
       if (index !== -1) {
         state.bills[index] = action.payload;
       }
@@ -115,14 +124,12 @@ const billsSlice = createSlice({
       })
       .addCase(fetchBills.fulfilled, (state, action) => {
         state.loading = false;
-        const {items, total, page} = action.payload as PaginatedResponse<Bill>;
-        if (page === 1) {
-          state.bills = items;
-        } else {
-          state.bills = [...state.bills, ...items];
-        }
+        const { items, total, page } =
+          action.payload as PaginatedResponse<Bill>;
+        state.bills = page === 1 ? items : [...state.bills, ...items];
         state.totalCount = total;
         state.currentPage = page;
+        state.hasMore = items.length === 20;
       })
       .addCase(fetchBills.rejected, (state, action) => {
         state.loading = false;
@@ -142,7 +149,9 @@ const billsSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(updateBill.fulfilled, (state, action) => {
-        const index = state.bills.findIndex(bill => bill.id === action.payload.id);
+        const index = state.bills.findIndex(
+          bill => bill.id === action.payload.id,
+        );
         if (index !== -1) {
           state.bills[index] = action.payload;
         }
@@ -165,5 +174,6 @@ const billsSlice = createSlice({
   },
 });
 
-export const {clearError, addLocalBill, updateLocalBill, removeLocalBill} = billsSlice.actions;
+export const { clearError, addLocalBill, updateLocalBill, removeLocalBill } =
+  billsSlice.actions;
 export default billsSlice.reducer;

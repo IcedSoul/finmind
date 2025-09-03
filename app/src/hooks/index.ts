@@ -1,9 +1,9 @@
-import {useState, useEffect, useCallback, useRef} from 'react';
-import {Alert, BackHandler} from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
-import {RootState} from '@/types';
-import {databaseService} from '@/services/database';
-import {storage} from '@/utils';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { BackHandler, Alert } from 'react-native';
+import { useSelector } from 'react-redux';
+import { RootState, Category } from '@/types';
+import { databaseService } from '@/services/database';
+import { storage } from '@/utils';
 
 export const useForm = <T extends Record<string, any>>(initialValues: T) => {
   const [values, setValues] = useState<T>(initialValues);
@@ -11,31 +11,30 @@ export const useForm = <T extends Record<string, any>>(initialValues: T) => {
   const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
 
   const handleChange = (name: keyof T, value: any) => {
-    setValues(prev => ({...prev, [name]: value}));
+    setValues(prev => ({ ...prev, [name]: value }));
     if (touched[name]) {
       validateField(name, value);
     }
   };
 
   const handleBlur = (name: keyof T) => {
-    setTouched(prev => ({...prev, [name]: true}));
+    setTouched(prev => ({ ...prev, [name]: true }));
     validateField(name, values[name]);
   };
 
   const validateField = (name: keyof T, value: any) => {
     // 简单的验证逻辑，可以根据需要扩展
     if (value === '' || value === undefined || value === null) {
-      setErrors(prev => ({...prev, [name]: '此字段不能为空'}));
+      setErrors(prev => ({ ...prev, [name]: '此字段不能为空' }));
       return false;
     } else {
-      setErrors(prev => ({...prev, [name]: ''}));
+      setErrors(prev => ({ ...prev, [name]: '' }));
       return true;
     }
   };
 
   const validate = (): boolean => {
     let isValid = true;
-    const newErrors: Partial<Record<keyof T, string>> = {};
     const newTouched: Partial<Record<keyof T, boolean>> = {};
 
     Object.keys(values).forEach(key => {
@@ -71,7 +70,10 @@ export const useForm = <T extends Record<string, any>>(initialValues: T) => {
 
 export const useBackHandler = (handler: () => boolean) => {
   useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', handler);
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handler,
+    );
     return () => subscription.remove();
   }, [handler]);
 };
@@ -93,7 +95,7 @@ export const useDebounce = <T>(value: T, delay: number): T => {
 };
 
 export const useCategories = () => {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchCategories = useCallback(async () => {
@@ -112,34 +114,33 @@ export const useCategories = () => {
     fetchCategories();
   }, [fetchCategories]);
 
-  return {categories, loading, refreshCategories: fetchCategories};
+  return { categories, loading, refreshCategories: fetchCategories };
 };
 
 export const useAuth = () => {
-  const dispatch = useDispatch();
-  const {user, token, isAuthenticated, loading, error} = useSelector(
+  const { user, token, isAuthenticated, loading, error } = useSelector(
     (state: RootState) => state.auth,
   );
 
   const logout = useCallback(() => {
     Alert.alert('退出登录', '确定要退出登录吗？', [
-      {text: '取消', style: 'cancel'},
+      { text: '取消', style: 'cancel' },
       {
         text: '确定',
         onPress: async () => {
           await storage.removeItem('auth');
           // 这里应该调用 authSlice 中的 logout action
-          // dispatch(logout());
+          // _dispatch(logout());
         },
       },
     ]);
-  }, [dispatch]);
+  }, []);
 
-  return {user, token, isAuthenticated, loading, error, logout};
+  return { user, token, isAuthenticated, loading, error, logout };
 };
 
 export const useInterval = (callback: () => void, delay: number | null) => {
-  const savedCallback = useRef<() => void>();
+  const savedCallback = useRef<(() => void) | undefined>(undefined);
 
   useEffect(() => {
     savedCallback.current = callback;
@@ -157,7 +158,7 @@ export const useInterval = (callback: () => void, delay: number | null) => {
 };
 
 export const usePrevious = <T>(value: T): T | undefined => {
-  const ref = useRef<T>();
+  const ref = useRef<T | undefined>(undefined);
   useEffect(() => {
     ref.current = value;
   }, [value]);
@@ -180,7 +181,7 @@ export const useNetworkStatus = () => {
     return () => clearInterval(interval);
   }, []);
 
-  return {isConnected};
+  return { isConnected };
 };
 
 export const useSyncStatus = () => {
@@ -200,8 +201,8 @@ export const useSyncStatus = () => {
 
   const checkPendingChanges = useCallback(async () => {
     try {
-      const unsyncedBills = await databaseService.getUnsyncedBills();
-      setPendingChanges(unsyncedBills.length);
+      const bills = await databaseService.getBills();
+      setPendingChanges(bills.length);
     } catch (error) {
       console.error('Error checking pending changes:', error);
     }
@@ -213,5 +214,5 @@ export const useSyncStatus = () => {
     return () => clearInterval(interval);
   }, [checkPendingChanges]);
 
-  return {isSyncing, lastSyncTime, pendingChanges, startSync};
+  return { isSyncing, lastSyncTime, pendingChanges, startSync };
 };

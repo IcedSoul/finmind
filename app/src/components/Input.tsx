@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   TextInput,
@@ -45,13 +45,13 @@ const Input: React.FC<InputProps> = ({
   const getContainerStyle = () => {
     const baseStyle = [styles.container];
     if (containerStyle) {
-      baseStyle.push(containerStyle);
+      baseStyle.push(containerStyle as any);
     }
     return baseStyle;
   };
 
   const getInputContainerStyle = () => {
-    const baseStyle = [styles.inputContainer];
+    const baseStyle = [styles.inputContainer] as any[];
     if (isFocused) {
       baseStyle.push(styles.inputContainerFocused);
     }
@@ -62,7 +62,7 @@ const Input: React.FC<InputProps> = ({
   };
 
   const getInputStyle = () => {
-    const baseStyle = [styles.input];
+    const baseStyle = [styles.input] as any[];
     if (leftIcon) {
       baseStyle.push(styles.inputWithLeftIcon);
     }
@@ -80,9 +80,10 @@ const Input: React.FC<InputProps> = ({
       return (
         <TouchableOpacity
           style={styles.iconButton}
-          onPress={togglePasswordVisibility}>
+          onPress={togglePasswordVisibility}
+        >
           <Icon
-            name={isPasswordVisible ? 'eye-off' : 'eye'}
+            name={(isPasswordVisible ? 'eye-off' : 'eye') as any}
             size={20}
             color="#8E8E93"
           />
@@ -92,10 +93,8 @@ const Input: React.FC<InputProps> = ({
 
     if (rightIcon) {
       return (
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={onRightIconPress}>
-          <Icon name={rightIcon} size={20} color="#8E8E93" />
+        <TouchableOpacity style={styles.iconButton} onPress={onRightIconPress}>
+          <Icon name={rightIcon as any} size={20} color="#8E8E93" />
         </TouchableOpacity>
       );
     }
@@ -111,26 +110,28 @@ const Input: React.FC<InputProps> = ({
           {required && <Text style={styles.required}> *</Text>}
         </Text>
       )}
-      
+
       <View style={getInputContainerStyle()}>
         {leftIcon && (
           <View style={styles.leftIconContainer}>
-            <Icon name={leftIcon} size={20} color="#8E8E93" />
+            <Icon name={leftIcon as any} size={20} color="#8E8E93" />
           </View>
         )}
-        
+
         <TextInput
           style={getInputStyle()}
-          secureTextEntry={showPasswordToggle ? !isPasswordVisible : secureTextEntry}
+          secureTextEntry={
+            showPasswordToggle ? !isPasswordVisible : secureTextEntry
+          }
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholderTextColor="#C7C7CC"
           {...props}
         />
-        
+
         {renderRightIcon()}
       </View>
-      
+
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -160,7 +161,7 @@ const styles = StyleSheet.create({
   inputContainerFocused: {
     borderColor: '#007AFF',
     shadowColor: '#007AFF',
-    shadowOffset: {width: 0, height: 0},
+    shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,

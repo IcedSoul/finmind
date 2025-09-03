@@ -1,11 +1,12 @@
 import React from 'react';
-import {Provider} from 'react-redux';
-import {NavigationContainer} from '@react-navigation/native';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {store} from '@/store';
-import AppNavigator from '@/navigation/AppNavigator';
-import {initDatabase} from '@/services/database';
+import { Provider } from 'react-redux';
+import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StyleSheet } from 'react-native';
+import { store } from '@/store';
+import AppNavigator from '@/navigation';
+import { initDatabase } from '@/services/database';
 
 const App: React.FC = () => {
   React.useEffect(() => {
@@ -13,7 +14,7 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{flex: 1}}>
+    <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
         <Provider store={store}>
           <NavigationContainer>
@@ -24,5 +25,11 @@ const App: React.FC = () => {
     </GestureHandlerRootView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
 
 export default App;

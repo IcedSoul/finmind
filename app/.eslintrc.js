@@ -1,16 +1,15 @@
 module.exports = {
   root: true,
-  extends: ['@react-native'],
-  parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
-  overrides: [
-    {
-      files: ['*.ts', '*.tsx'],
-      rules: {
-        '@typescript-eslint/no-shadow': ['error'],
-        'no-shadow': 'off',
-        'no-undef': 'off',
-      },
-    },
+  extends: ['@react-native', 'prettier'],
+  plugins: ['prettier'],
+  ignorePatterns: [
+    'metro.config.js',
+    'react-native.config.js',
+    'babel.config.js',
+    'eslintrc.js',
+    'index.js'
   ],
+  rules: {
+    'prettier/prettier': 'error',
+  },
 };

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,88 +10,227 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import {RootState, Bill} from '@/types';
-import {createBill, updateBill} from '@/store/slices/billsSlice';
-import {useForm, useCategories} from '@/hooks';
-import {validateAmount, formatCurrency, getCategoryIcon, getCategoryColor} from '@/utils';
-import {AIService} from '@/services/aiService';
+import { RootState } from '@/types';
+import { createBill, updateBill } from '@/store/slices/billsSlice';
+import { useForm, useCategories } from '@/hooks';
+import { validateAmount, getCategoryIcon, getCategoryColor } from '@/utils';
+import { aiService } from '@/services/aiService';
 
 type BillType = 'income' | 'expense';
 
-interface AddBillScreenProps {
-  route?: {
-    params?: {
-      bill?: Bill;
-      aiData?: any;
-    };
-  };
+interface TypeButtonProps {
+  type: BillType;
+  title: string;
+  billType: BillType;
+  setBillType: (type: BillType) => void;
 }
+
+interface CategoryItemProps {
+  category: string;
+  setValue: (
+    name: 'merchant' | 'amount' | 'category' | 'description' | 'time',
+    value: string,
+  ) => void;
+  setShowCategoryModal: (show: boolean) => void;
+}
+
+interface AIModalProps {
+  showAIModal: boolean;
+  setShowAIModal: (show: boolean) => void;
+  aiProcessing: boolean;
+  handleAIRecognition: (text: string) => void;
+}
+
+const TypeButton: React.FC<TypeButtonProps> = ({
+  type,
+  title,
+  billType,
+  setBillType,
+}) => (
+  <TouchableOpacity
+    style={[
+      styles.typeButton,
+      billType === type && styles.typeButtonActive,
+      billType === type && type === 'income' && styles.incomeButtonActive,
+      billType === type && type === 'expense' && styles.expenseButtonActive,
+    ]}
+    onPress={() => setBillType(type)}
+  >
+    <Text
+      style={[
+        styles.typeButtonText,
+        billType === type && styles.typeButtonTextActive,
+      ]}
+    >
+      {title}
+    </Text>
+  </TouchableOpacity>
+);
+
+const CategoryItem: React.FC<CategoryItemProps> = ({
+  category,
+  setValue,
+  setShowCategoryModal,
+}) => (
+  <TouchableOpacity
+    style={styles.categoryItem}
+    onPress={() => {
+      setValue('category', category);
+      setShowCategoryModal(false);
+    }}
+  >
+    <View
+      style={[
+        styles.categoryIcon,
+        { backgroundColor: getCategoryColor(category) },
+      ]}
+    >
+      <Icon name={getCategoryIcon(category) as any} size={20} color="#FFFFFF" />
+    </View>
+    <Text style={styles.categoryName}>{category}</Text>
+  </TouchableOpacity>
+);
+
+const AIModal: React.FC<AIModalProps> = ({
+  showAIModal,
+  setShowAIModal,
+  aiProcessing,
+  handleAIRecognition,
+}) => {
+  const [aiText, setAiText] = useState('');
+
+  return (
+    <Modal
+      visible={showAIModal}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={() => setShowAIModal(false)}
+    >
+      <View style={styles.aiModalContainer}>
+        <View style={styles.aiModalHeader}>
+          <TouchableOpacity onPress={() => setShowAIModal(false)}>
+            <Icon name={'x' as any} size={24} color="#1C1C1E" />
+          </TouchableOpacity>
+          <Text style={styles.aiModalTitle}>AI智能识别</Text>
+          <View style={styles.placeholderView} />
+        </View>
+
+        <View style={styles.aiModalContent}>
+          <Text style={styles.aiModalDescription}>
+            输入账单相关文本，AI将自动识别商户、金额、分类等信息
+          </Text>
+
+          <TextInput
+            style={styles.aiTextInput}
+            placeholder="例如：在星巴克消费了35元买咖啡"
+            value={aiText}
+            onChangeText={setAiText}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
+
+          <TouchableOpacity
+            style={[
+              styles.aiRecognizeButton,
+              (!aiText.trim() || aiProcessing) &&
+                styles.aiRecognizeButtonDisabled,
+            ]}
+            onPress={() => handleAIRecognition(aiText)}
+            disabled={!aiText.trim() || aiProcessing}
+          >
+            <Text style={styles.aiRecognizeButtonText}>
+              {aiProcessing ? '识别中...' : '开始识别'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const AddBillScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
-  const {loading} = useSelector((state: RootState) => state.bills);
-  const {categories} = useCategories();
-  
+  const { loading } = useSelector((state: RootState) => state.bills);
+  const { categories } = useCategories();
+
   const editingBill = (route.params as any)?.bill;
   const aiData = (route.params as any)?.aiData;
   const isEditing = !!editingBill;
-  
-  const [billType, setBillType] = useState<BillType>(editingBill?.type || 'expense');
+
+  const [billType, setBillType] = useState<BillType>(
+    editingBill?.type || 'expense',
+  );
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiProcessing, setAiProcessing] = useState(false);
-  
-  const {values, errors, handleChange, handleSubmit, setValue} = useForm({
-    initialValues: {
-      merchant: editingBill?.merchant || '',
-      amount: editingBill?.amount?.toString() || '',
-      category: editingBill?.category || '',
-      description: editingBill?.description || '',
-      time: editingBill?.time || new Date().toISOString(),
-    },
-    validationRules: {
-      merchant: (value: string) => {
-        if (!value.trim()) return '请输入商户名称';
-        return null;
-      },
-      amount: (value: string) => {
-        if (!value.trim()) return '请输入金额';
-        if (!validateAmount(parseFloat(value))) return '请输入有效金额';
-        return null;
-      },
-      category: (value: string) => {
-        if (!value.trim()) return '请选择分类';
-        return null;
-      },
-    },
-    onSubmit: async (formValues) => {
-      try {
-        const billData = {
-          ...formValues,
-          amount: parseFloat(formValues.amount),
-          type: billType,
-          time: values.time,
-        };
-        
-        if (isEditing) {
-          await dispatch(updateBill({...billData, id: editingBill.id}) as any);
-          Alert.alert('成功', '账单已更新');
-        } else {
-          await dispatch(createBill(billData) as any);
-          Alert.alert('成功', '账单已添加');
-        }
-        
-        navigation.goBack();
-      } catch (error) {
-        Alert.alert('错误', isEditing ? '更新账单失败' : '添加账单失败');
-      }
-    },
+
+  const { values, errors, handleChange } = useForm({
+    merchant: editingBill?.merchant || '',
+    amount: editingBill?.amount?.toString() || '',
+    category: editingBill?.category || '',
+    description: editingBill?.description || '',
+    time: editingBill?.time || new Date().toISOString(),
   });
+
+  const setValue = useCallback(
+    (
+      name: 'merchant' | 'amount' | 'category' | 'description' | 'time',
+      value: string,
+    ) => {
+      handleChange(name, value);
+    },
+    [handleChange],
+  );
+
+  const handleSubmit = async () => {
+    if (!values.merchant.trim()) {
+      Alert.alert('错误', '请输入商户名称');
+      return;
+    }
+    if (!values.amount.trim()) {
+      Alert.alert('错误', '请输入金额');
+      return;
+    }
+    if (!validateAmount(values.amount)) {
+      Alert.alert('错误', '请输入有效金额');
+      return;
+    }
+    if (!values.category.trim()) {
+      Alert.alert('错误', '请选择分类');
+      return;
+    }
+
+    try {
+      const billData = {
+        merchant: values.merchant,
+        amount: parseFloat(values.amount),
+        category: values.category,
+        description: values.description,
+        type: billType,
+        time: values.time,
+      };
+
+      if (isEditing) {
+        await dispatch(
+          updateBill({ id: editingBill.id, data: billData }) as any,
+        );
+        Alert.alert('成功', '账单已更新');
+      } else {
+        await dispatch(createBill(billData) as any);
+        Alert.alert('成功', '账单已添加');
+      }
+
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('错误', isEditing ? '更新账单失败' : '添加账单失败');
+    }
+  };
 
   useEffect(() => {
     if (aiData) {
@@ -103,19 +242,20 @@ const AddBillScreen = () => {
         setBillType(aiData.type);
       }
     }
-  }, [aiData]);
+  }, [aiData, setValue]);
 
   const handleAIRecognition = async (text: string) => {
     setAiProcessing(true);
     try {
-      const result = await AIService.parseTextContent(text);
-      if (result.success && result.data) {
-        setValue('merchant', result.data.merchant || '');
-        setValue('amount', result.data.amount?.toString() || '');
-        setValue('category', result.data.category || '');
-        setValue('description', result.data.description || '');
-        if (result.data.type) {
-          setBillType(result.data.type);
+      const result = await aiService.parseTextContent(text);
+      if (result.success && result.data && result.data.length > 0) {
+        const firstBill = result.data[0];
+        setValue('merchant', firstBill.merchant || '');
+        setValue('amount', firstBill.amount?.toString() || '');
+        setValue('category', firstBill.category || '');
+        setValue('description', '');
+        if (firstBill.type) {
+          setBillType(firstBill.type);
         }
         Alert.alert('成功', 'AI识别完成');
       } else {
@@ -129,111 +269,34 @@ const AddBillScreen = () => {
     }
   };
 
-  const TypeButton = ({type, title}: {type: BillType; title: string}) => (
-    <TouchableOpacity
-      style={[
-        styles.typeButton,
-        billType === type && styles.typeButtonActive,
-        billType === type && type === 'income' && styles.incomeButtonActive,
-        billType === type && type === 'expense' && styles.expenseButtonActive,
-      ]}
-      onPress={() => setBillType(type)}>
-      <Text
-        style={[
-          styles.typeButtonText,
-          billType === type && styles.typeButtonTextActive,
-        ]}>
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const CategoryItem = ({category}: {category: string}) => (
-    <TouchableOpacity
-      style={styles.categoryItem}
-      onPress={() => {
-        setValue('category', category);
-        setShowCategoryModal(false);
-      }}>
-      <View
-        style={[
-          styles.categoryIcon,
-          {backgroundColor: getCategoryColor(category)},
-        ]}>
-        <Icon name={getCategoryIcon(category)} size={20} color="#FFFFFF" />
-      </View>
-      <Text style={styles.categoryName}>{category}</Text>
-    </TouchableOpacity>
-  );
-
-  const AIModal = () => {
-    const [aiText, setAiText] = useState('');
-    
-    return (
-      <Modal
-        visible={showAIModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowAIModal(false)}>
-        <View style={styles.aiModalContainer}>
-          <View style={styles.aiModalHeader}>
-            <TouchableOpacity onPress={() => setShowAIModal(false)}>
-              <Icon name="x" size={24} color="#1C1C1E" />
-            </TouchableOpacity>
-            <Text style={styles.aiModalTitle}>AI智能识别</Text>
-            <View style={{width: 24}} />
-          </View>
-          
-          <View style={styles.aiModalContent}>
-            <Text style={styles.aiModalDescription}>
-              输入账单相关文本，AI将自动识别商户、金额、分类等信息
-            </Text>
-            
-            <TextInput
-              style={styles.aiTextInput}
-              placeholder="例如：在星巴克消费了35元买咖啡"
-              value={aiText}
-              onChangeText={setAiText}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-            
-            <TouchableOpacity
-              style={[
-                styles.aiRecognizeButton,
-                (!aiText.trim() || aiProcessing) && styles.aiRecognizeButtonDisabled,
-              ]}
-              onPress={() => handleAIRecognition(aiText)}
-              disabled={!aiText.trim() || aiProcessing}>
-              <Text style={styles.aiRecognizeButtonText}>
-                {aiProcessing ? '识别中...' : '开始识别'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color="#1C1C1E" />
+          <Icon name={'arrow-left' as any} size={24} color="#1C1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {isEditing ? '编辑账单' : '添加账单'}
         </Text>
         <TouchableOpacity onPress={() => setShowAIModal(true)}>
-          <Icon name="zap" size={24} color="#007AFF" />
+          <Icon name={'zap' as any} size={24} color="#007AFF" />
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.typeSelector}>
-          <TypeButton type="expense" title="支出" />
-          <TypeButton type="income" title="收入" />
+          <TypeButton
+            type="expense"
+            title="支出"
+            billType={billType}
+            setBillType={setBillType}
+          />
+          <TypeButton
+            type="income"
+            title="收入"
+            billType={billType}
+            setBillType={setBillType}
+          />
         </View>
 
         <View style={styles.form}>
@@ -243,7 +306,7 @@ const AddBillScreen = () => {
               style={[styles.input, errors.merchant && styles.inputError]}
               placeholder="请输入商户名称"
               value={values.merchant}
-              onChangeText={(text) => handleChange('merchant', text)}
+              onChangeText={text => handleChange('merchant', text)}
             />
             {errors.merchant && (
               <Text style={styles.errorText}>{errors.merchant}</Text>
@@ -258,7 +321,7 @@ const AddBillScreen = () => {
                 style={[styles.amountInput, errors.amount && styles.inputError]}
                 placeholder="0.00"
                 value={values.amount}
-                onChangeText={(text) => handleChange('amount', text)}
+                onChangeText={text => handleChange('amount', text)}
                 keyboardType="numeric"
               />
             </View>
@@ -270,22 +333,29 @@ const AddBillScreen = () => {
           <View style={styles.formGroup}>
             <Text style={styles.label}>分类</Text>
             <TouchableOpacity
-              style={[styles.categorySelector, errors.category && styles.inputError]}
-              onPress={() => setShowCategoryModal(true)}>
+              style={[
+                styles.categorySelector,
+                errors.category && styles.inputError,
+              ]}
+              onPress={() => setShowCategoryModal(true)}
+            >
               {values.category ? (
                 <View style={styles.selectedCategory}>
                   <View
                     style={[
                       styles.categoryIcon,
-                      {backgroundColor: getCategoryColor(values.category)},
-                    ]}>
+                      { backgroundColor: getCategoryColor(values.category) },
+                    ]}
+                  >
                     <Icon
                       name={getCategoryIcon(values.category)}
                       size={16}
                       color="#FFFFFF"
                     />
                   </View>
-                  <Text style={styles.selectedCategoryText}>{values.category}</Text>
+                  <Text style={styles.selectedCategoryText}>
+                    {values.category}
+                  </Text>
                 </View>
               ) : (
                 <Text style={styles.placeholderText}>请选择分类</Text>
@@ -303,7 +373,7 @@ const AddBillScreen = () => {
               style={[styles.input, styles.textArea]}
               placeholder="添加备注信息"
               value={values.description}
-              onChangeText={(text) => handleChange('description', text)}
+              onChangeText={text => handleChange('description', text)}
               multiline
               numberOfLines={3}
               textAlignVertical="top"
@@ -324,12 +394,10 @@ const AddBillScreen = () => {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[
-            styles.submitButton,
-            loading && styles.submitButtonDisabled,
-          ]}
+          style={[styles.submitButton, loading && styles.submitButtonDisabled]}
           onPress={handleSubmit}
-          disabled={loading}>
+          disabled={loading}
+        >
           <Text style={styles.submitButtonText}>
             {loading ? '保存中...' : isEditing ? '更新账单' : '添加账单'}
           </Text>
@@ -340,26 +408,38 @@ const AddBillScreen = () => {
         visible={showCategoryModal}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowCategoryModal(false)}>
+        onRequestClose={() => setShowCategoryModal(false)}
+      >
         <View style={styles.categoryModalContainer}>
           <View style={styles.categoryModalHeader}>
             <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
               <Icon name="x" size={24} color="#1C1C1E" />
             </TouchableOpacity>
             <Text style={styles.categoryModalTitle}>选择分类</Text>
-            <View style={{width: 24}} />
+            <View style={styles.placeholderView} />
           </View>
           <FlatList
             data={categories}
-            renderItem={({item}) => <CategoryItem category={item.name} />}
-            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <CategoryItem
+                category={item.name}
+                setValue={setValue}
+                setShowCategoryModal={setShowCategoryModal}
+              />
+            )}
+            keyExtractor={item => item.id}
             numColumns={3}
             contentContainerStyle={styles.categoryList}
           />
         </View>
       </Modal>
 
-      <AIModal />
+      <AIModal
+        showAIModal={showAIModal}
+        setShowAIModal={setShowAIModal}
+        aiProcessing={aiProcessing}
+        handleAIRecognition={handleAIRecognition}
+      />
     </View>
   );
 };
@@ -575,7 +655,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
@@ -605,6 +685,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1C1C1E',
+  },
+  placeholderView: {
+    width: 24,
   },
   aiModalContent: {
     padding: 20,
