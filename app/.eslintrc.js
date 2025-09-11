@@ -7,7 +7,8 @@ module.exports = {
     'react-native.config.js',
     'babel.config.js',
     'eslintrc.js',
-    'index.js'
+    'index.js',
+    '.eslintrc.js',
   ],
   rules: {
     'prettier/prettier': 'error',

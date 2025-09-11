@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import { RootState } from '@/types';
 import { formatCurrency, getMonthRange, calculateTotalAmount } from '@/utils';
 import { useSyncStatus } from '@/hooks';
+import { useGetBillsQuery } from '@/store/api/baseApi';
 
 const { width } = Dimensions.get('window');
 
@@ -75,7 +76,8 @@ const BillItem: React.FC<BillItemProps> = ({ bill }) => (
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { bills } = useSelector((state: RootState) => state.bills);
+  const { data: billsResponse, refetch } = useGetBillsQuery({});
+  const bills = billsResponse?.items || [];
   const { user } = useSelector((state: RootState) => state.auth);
   const [refreshing, setRefreshing] = useState(false);
   const { pendingChanges, startSync } = useSyncStatus();
@@ -95,9 +97,7 @@ const HomeScreen = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      // 这里应该调用获取账单的 action
-      // await dispatch(fetchBills());
-      await new Promise<void>(resolve => setTimeout(resolve, 1000));
+      await refetch();
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

@@ -10,14 +10,16 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import { RootState } from '@/types';
-import { createBill, updateBill } from '@/store/slices/billsSlice';
 import { useForm, useCategories } from '@/hooks';
 import { validateAmount, getCategoryIcon, getCategoryColor } from '@/utils';
 import { aiService } from '@/services/aiService';
+import { Bill } from '@/types';
+import {
+  useCreateBillMutation,
+  useUpdateBillMutation,
+} from '@/store/api/baseApi';
 
 type BillType = 'income' | 'expense';
 
@@ -155,11 +157,13 @@ const AIModal: React.FC<AIModalProps> = ({
 const AddBillScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const dispatch = useDispatch();
-  const { loading } = useSelector((state: RootState) => state.bills);
+  const [createBill, { isLoading: isCreating }] = useCreateBillMutation();
+  const [updateBill, { isLoading: isUpdating }] = useUpdateBillMutation();
   const { categories } = useCategories();
 
-  const editingBill = (route.params as any)?.bill;
+  const loading = isCreating || isUpdating;
+
+  const editingBill = (route.params as any)?.bill as Bill | undefined;
   const aiData = (route.params as any)?.aiData;
   const isEditing = !!editingBill;
 
@@ -216,19 +220,20 @@ const AddBillScreen = () => {
         time: values.time,
       };
 
-      if (isEditing) {
-        await dispatch(
-          updateBill({ id: editingBill.id, data: billData }) as any,
-        );
+      if (isEditing && editingBill) {
+        await updateBill({ id: editingBill.id, data: billData }).unwrap();
         Alert.alert('成功', '账单已更新');
       } else {
-        await dispatch(createBill(billData) as any);
+        await createBill(billData).unwrap();
         Alert.alert('成功', '账单已添加');
       }
 
       navigation.goBack();
-    } catch (error) {
-      Alert.alert('错误', isEditing ? '更新账单失败' : '添加账单失败');
+    } catch (error: any) {
+      Alert.alert(
+        '错误',
+        error.message || (isEditing ? '更新账单失败' : '添加账单失败'),
+      );
     }
   };
 

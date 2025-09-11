@@ -8,13 +8,12 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import { useDispatch } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import * as DocumentPicker from 'expo-document-picker';
 import { Bill } from '@/types';
-import { createBill } from '@/store/slices/billsSlice';
 import { aiService } from '@/services/aiService';
+import { useCreateBillMutation } from '@/store/api/baseApi';
 import { formatCurrency, getCategoryIcon, getCategoryColor } from '@/utils';
 
 interface ParsedBill extends Omit<Bill, 'id' | 'userId' | 'synced'> {
@@ -97,7 +96,7 @@ const EmptyState = () => (
 
 const ImportBillScreen = () => {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
+  const [createBill] = useCreateBillMutation();
 
   const [parsedBills, setParsedBills] = useState<ParsedBill[]>([]);
   const [loading, setLoading] = useState(false);
@@ -171,7 +170,7 @@ const ImportBillScreen = () => {
       for (const bill of selectedBills) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { selected, ...billData } = bill;
-        await dispatch(createBill(billData) as any);
+        await createBill(billData).unwrap();
       }
 
       Alert.alert('成功', `已导入 ${selectedBills.length} 条账单记录`, [

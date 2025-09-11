@@ -10,12 +10,11 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import { RootState } from '@/types';
 import { useForm } from '@/hooks';
 import { validateEmail, validatePassword } from '@/utils';
+import { useRegisterMutation } from '@/store/api/baseApi';
 
 interface RegisterForm {
   name: string;
@@ -26,7 +25,7 @@ interface RegisterForm {
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const [register, { isLoading, error }] = useRegisterMutation();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -64,9 +63,12 @@ const RegisterScreen = () => {
     }
 
     try {
-      // 这里应该调用 authSlice 中的 register action
-      // await dispatch(register({name: values.name, email: values.email, password: values.password}));
-      console.log('Register attempt:', values);
+      await register({
+        name: values.name,
+        email: values.email,
+        password: values.password,
+      }).unwrap();
+
       Alert.alert('注册成功', '请登录您的账户', [
         { text: '确定', onPress: () => navigation.goBack() },
       ]);
@@ -222,18 +224,22 @@ const RegisterScreen = () => {
             <Text style={styles.errorText}>{errors.confirmPassword}</Text>
           )}
 
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {error && (
+            <Text style={styles.errorText}>
+              {(error as any)?.data?.message || '注册失败'}
+            </Text>
+          )}
 
           <TouchableOpacity
             style={[
               styles.registerButton,
-              loading && styles.registerButtonDisabled,
+              isLoading && styles.registerButtonDisabled,
             ]}
             onPress={handleRegister}
-            disabled={loading}
+            disabled={isLoading}
           >
             <Text style={styles.registerButtonText}>
-              {loading ? '注册中...' : '注册'}
+              {isLoading ? '注册中...' : '注册'}
             </Text>
           </TouchableOpacity>
 

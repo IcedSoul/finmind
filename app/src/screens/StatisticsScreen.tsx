@@ -7,8 +7,8 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/types';
+import { useGetBillsQuery } from '@/store/api/baseApi';
+
 import {
   formatCurrency,
   getMonthRange,
@@ -234,7 +234,11 @@ const TrendTab: React.FC<TrendTabProps> = ({ trendData }) => {
 };
 
 const StatisticsScreen = () => {
-  const { bills } = useSelector((state: RootState) => state.bills);
+  const { data: billsResponse } = useGetBillsQuery({});
+  const bills = useMemo(
+    () => billsResponse?.items || [],
+    [billsResponse?.items],
+  );
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
   const [selectedTab, setSelectedTab] = useState<
     'overview' | 'category' | 'trend'
@@ -275,7 +279,9 @@ const StatisticsScreen = () => {
       if (!stats[bill.category]) {
         stats[bill.category] = { income: 0, expense: 0 };
       }
-      stats[bill.category][bill.type] += bill.amount;
+      stats[bill.category][
+        bill.type as keyof { income: number; expense: number }
+      ] += bill.amount;
     });
 
     return Object.entries(stats)

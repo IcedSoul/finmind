@@ -16,6 +16,7 @@ import { RootState } from '@/types';
 import { logout } from '@/store/slices/authSlice';
 import { storage } from '@/utils';
 import { useSyncStatus } from '@/hooks';
+import { useGetBillsQuery } from '@/store/api/baseApi';
 
 const SettingItem = ({
   icon,
@@ -72,7 +73,8 @@ const SettingsScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
-  const { bills } = useSelector((state: RootState) => state.bills);
+  const { data: billsResponse } = useGetBillsQuery({});
+  const bills = billsResponse?.items || [];
   const { isSyncing, pendingChanges, startSync } = useSyncStatus();
 
   const [notifications, setNotifications] = useState(true);

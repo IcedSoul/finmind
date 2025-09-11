@@ -1,0 +1,1 @@
+expo + react native项目根目录在 /app， 启动命令为 “npm run expo:android”

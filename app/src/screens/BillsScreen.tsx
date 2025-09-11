@@ -9,13 +9,13 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
-import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation';
 import Icon from 'react-native-vector-icons/Feather';
-import { RootState, Bill } from '@/types';
+import { Bill } from '@/types';
 import { formatCurrency, formatDate, groupBillsByDate } from '@/utils';
+import { useGetBillsQuery, useDeleteBillMutation } from '@/store/api/baseApi';
 type FilterType = 'all' | 'income' | 'expense';
 type SortType = 'time' | 'amount';
 
@@ -103,7 +103,12 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const BillsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
 
-  const { bills } = useSelector((state: RootState) => state.bills);
+  const { data: billsResponse, isLoading, refetch } = useGetBillsQuery({});
+  const bills = useMemo(
+    () => billsResponse?.items || [],
+    [billsResponse?.items],
+  );
+  const [deleteBill] = useDeleteBillMutation();
 
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');
@@ -149,9 +154,7 @@ const BillsScreen = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      // 这里应该调用获取账单的 action
-      // await dispatch(fetchBills());
-      await new Promise<void>(resolve => setTimeout(resolve, 1000));
+      await refetch();
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -160,15 +163,18 @@ const BillsScreen = () => {
   };
 
   const handleDeleteBill = (billId: string) => {
-    Alert.alert('删除账单', '确定要删除这条账单记录吗？', [
+    Alert.alert('确认删除', '确定要删除这条账单记录吗？', [
       { text: '取消', style: 'cancel' },
       {
         text: '删除',
         style: 'destructive',
-        onPress: () => {
-          // 这里应该调用删除账单的 action
-          // dispatch(deleteBill(billId));
-          console.log('Delete bill:', billId);
+        onPress: async () => {
+          try {
+            await deleteBill(billId).unwrap();
+            Alert.alert('成功', '账单已删除');
+          } catch (error) {
+            Alert.alert('错误', '删除失败，请重试');
+          }
         },
       },
     ]);
@@ -297,7 +303,10 @@ const BillsScreen = () => {
         renderItem={renderItem}
         keyExtractor={item => item.id}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing || isLoading}
+            onRefresh={onRefresh}
+          />
         }
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}

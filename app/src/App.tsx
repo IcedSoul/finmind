@@ -2,11 +2,10 @@ import React, { useEffect } from 'react';
 import { StatusBar, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { Provider } from 'react-redux';
-import { PersistGate } from 'redux-persist/integration/react';
-import { store, persistor } from './store';
+import { store } from './store';
 import Navigation from './navigation';
-import Loading from './components/Loading';
 import { initDatabase } from './services/database';
+import { loadPersistedAuth } from './utils/authPersistence';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -14,8 +13,11 @@ const App: React.FC = () => {
       try {
         await initDatabase();
         console.log('Database initialized successfully');
+
+        await loadPersistedAuth();
+        console.log('Auth state restored');
       } catch (error) {
-        console.error('Failed to initialize database:', error);
+        console.error('Failed to initialize app:', error);
       }
     };
 
@@ -24,15 +26,13 @@ const App: React.FC = () => {
 
   return (
     <Provider store={store}>
-      <PersistGate loading={<Loading overlay />} persistor={persistor}>
-        <NavigationContainer>
-          <StatusBar
-            barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'}
-            backgroundColor="#FFFFFF"
-          />
-          <Navigation />
-        </NavigationContainer>
-      </PersistGate>
+      <NavigationContainer>
+        <StatusBar
+          barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'}
+          backgroundColor="#FFFFFF"
+        />
+        <Navigation />
+      </NavigationContainer>
     </Provider>
   );
 };

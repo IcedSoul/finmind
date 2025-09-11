@@ -10,12 +10,13 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import { RootState } from '@/types';
 import { useForm } from '@/hooks';
 import { validateEmail, validatePassword } from '@/utils';
+import { useLoginMutation } from '@/store/api/baseApi';
+import { setCredentials } from '@/store/slices/authSlice';
 
 interface LoginForm {
   email: string;
@@ -24,7 +25,8 @@ interface LoginForm {
 
 const LoginScreen = () => {
   const navigation = useNavigation();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
+  const [login, { isLoading, error }] = useLoginMutation();
   const [showPassword, setShowPassword] = useState(false);
 
   const { values, errors, touched, handleChange, handleBlur, validate } =
@@ -49,9 +51,19 @@ const LoginScreen = () => {
     }
 
     try {
-      // 这里应该调用 authSlice 中的 login action
-      // await dispatch(login({email: values.email, password: values.password}));
-      console.log('Login attempt:', values);
+      const result = await login({
+        email: values.email,
+        password: values.password,
+      }).unwrap();
+
+      dispatch(
+        setCredentials({
+          user: result.user,
+          token: result.token,
+        }),
+      );
+
+      Alert.alert('成功', '登录成功');
     } catch (loginError: any) {
       Alert.alert('登录失败', loginError.message || '请检查网络连接');
     }
@@ -139,15 +151,22 @@ const LoginScreen = () => {
             <Text style={styles.errorText}>{errors.password}</Text>
           )}
 
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {error && (
+            <Text style={styles.errorText}>
+              {(error as any)?.data?.message || '登录失败'}
+            </Text>
+          )}
 
           <TouchableOpacity
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+            style={[
+              styles.loginButton,
+              isLoading && styles.loginButtonDisabled,
+            ]}
             onPress={handleLogin}
-            disabled={loading}
+            disabled={isLoading}
           >
             <Text style={styles.loginButtonText}>
-              {loading ? '登录中...' : '登录'}
+              {isLoading ? '登录中...' : '登录'}
             </Text>
           </TouchableOpacity>
 

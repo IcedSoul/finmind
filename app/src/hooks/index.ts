@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BackHandler, Alert } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState, Category } from '@/types';
 import { databaseService } from '@/services/database';
-import { storage } from '@/utils';
+import { logout as logoutAction } from '@/store/slices/authSlice';
 
 export const useForm = <T extends Record<string, any>>(initialValues: T) => {
   const [values, setValues] = useState<T>(initialValues);
@@ -118,6 +118,7 @@ export const useCategories = () => {
 };
 
 export const useAuth = () => {
+  const dispatch = useDispatch();
   const { user, token, isAuthenticated, loading, error } = useSelector(
     (state: RootState) => state.auth,
   );
@@ -127,14 +128,12 @@ export const useAuth = () => {
       { text: '取消', style: 'cancel' },
       {
         text: '确定',
-        onPress: async () => {
-          await storage.removeItem('auth');
-          // 这里应该调用 authSlice 中的 logout action
-          // _dispatch(logout());
+        onPress: () => {
+          dispatch(logoutAction());
         },
       },
     ]);
-  }, []);
+  }, [dispatch]);
 
   return { user, token, isAuthenticated, loading, error, logout };
 };
