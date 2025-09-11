@@ -10,13 +10,12 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { useDispatch } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useForm } from '@/hooks';
 import { validateEmail, validatePassword } from '@/utils';
-import { useLoginMutation } from '@/store/api/baseApi';
-import { setCredentials } from '@/store/slices/authSlice';
+import { useAuthStore } from '@/store';
+import { apiService } from '@/services/api';
 
 interface LoginForm {
   email: string;
@@ -25,8 +24,8 @@ interface LoginForm {
 
 const LoginScreen = () => {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const [login, { isLoading, error }] = useLoginMutation();
+  const { setCredentials } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const { values, errors, touched, handleChange, handleBlur, validate } =
@@ -51,21 +50,18 @@ const LoginScreen = () => {
     }
 
     try {
-      const result = await login({
+      setIsLoading(true);
+      const result = await apiService.login({
         email: values.email,
         password: values.password,
-      }).unwrap();
+      });
 
-      dispatch(
-        setCredentials({
-          user: result.user,
-          token: result.token,
-        }),
-      );
-
+      setCredentials(result.user, result.token);
       Alert.alert('成功', '登录成功');
     } catch (loginError: any) {
       Alert.alert('登录失败', loginError.message || '请检查网络连接');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -149,12 +145,6 @@ const LoginScreen = () => {
           </View>
           {touched.password && errors.password && (
             <Text style={styles.errorText}>{errors.password}</Text>
-          )}
-
-          {error && (
-            <Text style={styles.errorText}>
-              {(error as any)?.data?.message || '登录失败'}
-            </Text>
           )}
 
           <TouchableOpacity

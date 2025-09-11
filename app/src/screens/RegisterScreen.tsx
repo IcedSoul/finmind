@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useForm } from '@/hooks';
 import { validateEmail, validatePassword } from '@/utils';
-import { useRegisterMutation } from '@/store/api/baseApi';
+import { authService } from '@/services/authService';
 
 interface RegisterForm {
   name: string;
@@ -25,7 +25,7 @@ interface RegisterForm {
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
-  const [register, { isLoading, error }] = useRegisterMutation();
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -63,17 +63,20 @@ const RegisterScreen = () => {
     }
 
     try {
-      await register({
+      setIsLoading(true);
+      await authService.register({
         name: values.name,
         email: values.email,
         password: values.password,
-      }).unwrap();
+      });
 
       Alert.alert('注册成功', '请登录您的账户', [
         { text: '确定', onPress: () => navigation.goBack() },
       ]);
     } catch (registerError: any) {
       Alert.alert('注册失败', registerError.message || '请检查网络连接');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -222,12 +225,6 @@ const RegisterScreen = () => {
           </View>
           {touched.confirmPassword && errors.confirmPassword && (
             <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-          )}
-
-          {error && (
-            <Text style={styles.errorText}>
-              {(error as any)?.data?.message || '注册失败'}
-            </Text>
           )}
 
           <TouchableOpacity

@@ -1,10 +1,8 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Feather';
-import { RootState } from '@/types';
+import { useAuthStore } from '@/store';
 
 import LoginScreen from '@/screens/LoginScreen';
 import RegisterScreen from '@/screens/RegisterScreen';
@@ -144,63 +142,59 @@ const MainTabs = () => {
 };
 
 const AppNavigator = () => {
-  const isAuthenticated = useSelector(
-    (state: RootState) => state.auth.isAuthenticated,
-  );
+  const { isAuthenticated } = useAuthStore();
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          animation: 'fade',
-        }}
-      >
-        {isAuthenticated ? (
-          <>
-            <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen
-              name="AddBill"
-              component={AddBillScreen}
-              options={{
-                headerShown: true,
-                title: '添加账单',
-                animation: 'slide_from_bottom',
-                headerStyle: {
-                  backgroundColor: '#FFFFFF',
-                },
-                headerTitleStyle: {
-                  fontSize: 18,
-                  fontWeight: '600',
-                  color: '#1C1C1E',
-                },
-                headerTintColor: '#007AFF',
-              }}
-            />
-            <Stack.Screen
-              name="Import"
-              component={ImportBillScreen}
-              options={{
-                headerShown: true,
-                title: '导入账单',
-                animation: 'slide_from_right',
-                headerStyle: {
-                  backgroundColor: '#FFFFFF',
-                },
-                headerTitleStyle: {
-                  fontSize: 18,
-                  fontWeight: '600',
-                  color: '#1C1C1E',
-                },
-                headerTintColor: '#007AFF',
-              }}
-            />
-          </>
-        ) : (
-          <Stack.Screen name="Auth" component={AuthStack} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'fade',
+      }}
+    >
+      {isAuthenticated ? (
+        <>
+          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen
+            name="AddBill"
+            component={AddBillScreen}
+            options={{
+              headerShown: true,
+              title: '添加账单',
+              animation: 'slide_from_bottom',
+              headerStyle: {
+                backgroundColor: '#FFFFFF',
+              },
+              headerTitleStyle: {
+                fontSize: 18,
+                fontWeight: '600',
+                color: '#1C1C1E',
+              },
+              headerTintColor: '#007AFF',
+            }}
+          />
+          <Stack.Screen
+            name="Import"
+            component={ImportBillScreen}
+            options={{
+              headerShown: true,
+              title: '导入账单',
+              animation: 'slide_from_right',
+              headerStyle: {
+                backgroundColor: '#FFFFFF',
+              },
+              headerTitleStyle: {
+                fontSize: 18,
+                fontWeight: '600',
+                color: '#1C1C1E',
+              },
+              headerTintColor: '#007AFF',
+            }}
+          />
+        </>
+      ) : (
+        <Stack.Screen name="Auth" component={AuthStack} />
+      )}
+    </Stack.Navigator>
   );
 };
 

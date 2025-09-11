@@ -7,7 +7,8 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { useGetBillsQuery } from '@/store/api/baseApi';
+import { useBillsStore } from '@/store/billsStore';
+import { Bill } from '@/types';
 
 import {
   formatCurrency,
@@ -234,11 +235,11 @@ const TrendTab: React.FC<TrendTabProps> = ({ trendData }) => {
 };
 
 const StatisticsScreen = () => {
-  const { data: billsResponse } = useGetBillsQuery({});
-  const bills = useMemo(
-    () => billsResponse?.items || [],
-    [billsResponse?.items],
-  );
+  const { bills } = useBillsStore();
+
+  React.useEffect(() => {
+    useBillsStore.getState().fetchBills();
+  }, []);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
   const [selectedTab, setSelectedTab] = useState<
     'overview' | 'category' | 'trend'
@@ -262,7 +263,7 @@ const StatisticsScreen = () => {
   };
 
   const periodRange = getPeriodRange();
-  const periodBills = bills.filter(bill => {
+  const periodBills = bills.filter((bill: Bill) => {
     const billDate = new Date(bill.time);
     return billDate >= periodRange.start && billDate <= periodRange.end;
   });
@@ -275,7 +276,7 @@ const StatisticsScreen = () => {
   const categoryStats = useMemo(() => {
     const stats: { [key: string]: { income: number; expense: number } } = {};
 
-    periodBills.forEach(bill => {
+    periodBills.forEach((bill: Bill) => {
       if (!stats[bill.category]) {
         stats[bill.category] = { income: 0, expense: 0 };
       }
@@ -306,7 +307,7 @@ const StatisticsScreen = () => {
       const dayStart = new Date(date.setHours(0, 0, 0, 0));
       const dayEnd = new Date(date.setHours(23, 59, 59, 999));
 
-      const dayBills = bills.filter(bill => {
+      const dayBills = bills.filter((bill: Bill) => {
         const billDate = new Date(bill.time);
         return billDate >= dayStart && billDate <= dayEnd;
       });

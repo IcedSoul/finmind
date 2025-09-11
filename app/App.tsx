@@ -1,12 +1,14 @@
 import React from 'react';
-import { Provider } from 'react-redux';
-import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
-import { store } from '@/store';
+import { StyleSheet, Platform } from 'react-native';
 import AppNavigator from '@/navigation';
 import { initDatabase } from '@/services/database';
+
+// Web平台polyfills
+if (Platform.OS === 'web') {
+  require('../web/polyfills');
+}
 
 const App: React.FC = () => {
   React.useEffect(() => {
@@ -16,11 +18,7 @@ const App: React.FC = () => {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
-        <Provider store={store}>
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </Provider>
+        <AppNavigator />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

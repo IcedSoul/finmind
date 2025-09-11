@@ -16,10 +16,7 @@ import { useForm, useCategories } from '@/hooks';
 import { validateAmount, getCategoryIcon, getCategoryColor } from '@/utils';
 import { aiService } from '@/services/aiService';
 import { Bill } from '@/types';
-import {
-  useCreateBillMutation,
-  useUpdateBillMutation,
-} from '@/store/api/baseApi';
+import { useBillsStore } from '@/store/billsStore';
 
 type BillType = 'income' | 'expense';
 
@@ -157,11 +154,8 @@ const AIModal: React.FC<AIModalProps> = ({
 const AddBillScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const [createBill, { isLoading: isCreating }] = useCreateBillMutation();
-  const [updateBill, { isLoading: isUpdating }] = useUpdateBillMutation();
+  const { createBill, updateBill, loading } = useBillsStore();
   const { categories } = useCategories();
-
-  const loading = isCreating || isUpdating;
 
   const editingBill = (route.params as any)?.bill as Bill | undefined;
   const aiData = (route.params as any)?.aiData;
@@ -221,10 +215,10 @@ const AddBillScreen = () => {
       };
 
       if (isEditing && editingBill) {
-        await updateBill({ id: editingBill.id, data: billData }).unwrap();
+        await updateBill(editingBill.id, billData);
         Alert.alert('成功', '账单已更新');
       } else {
-        await createBill(billData).unwrap();
+        await createBill(billData);
         Alert.alert('成功', '账单已添加');
       }
 

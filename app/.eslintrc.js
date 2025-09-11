@@ -9,6 +9,7 @@ module.exports = {
     'eslintrc.js',
     'index.js',
     '.eslintrc.js',
+    'web/polyfills.js',
   ],
   rules: {
     'prettier/prettier': 'error',

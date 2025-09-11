@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import type { RootStackParamList } from '@/navigation';
 import Icon from 'react-native-vector-icons/Feather';
 import { Bill } from '@/types';
 import { formatCurrency, formatDate, groupBillsByDate } from '@/utils';
-import { useGetBillsQuery, useDeleteBillMutation } from '@/store/api/baseApi';
+import { useBillsStore } from '@/store/billsStore';
 type FilterType = 'all' | 'income' | 'expense';
 type SortType = 'time' | 'amount';
 
@@ -103,12 +103,11 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const BillsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
 
-  const { data: billsResponse, isLoading, refetch } = useGetBillsQuery({});
-  const bills = useMemo(
-    () => billsResponse?.items || [],
-    [billsResponse?.items],
-  );
-  const [deleteBill] = useDeleteBillMutation();
+  const { bills, loading, fetchBills, deleteBill } = useBillsStore();
+
+  useEffect(() => {
+    fetchBills();
+  }, [fetchBills]);
 
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');
@@ -122,18 +121,20 @@ const BillsScreen = () => {
 
     if (searchText) {
       filtered = filtered.filter(
-        bill =>
+        (bill: Bill) =>
           bill.merchant.toLowerCase().includes(searchText.toLowerCase()) ||
           bill.description?.toLowerCase().includes(searchText.toLowerCase()),
       );
     }
 
     if (filterType !== 'all') {
-      filtered = filtered.filter(bill => bill.type === filterType);
+      filtered = filtered.filter((bill: Bill) => bill.type === filterType);
     }
 
     if (selectedCategory) {
-      filtered = filtered.filter(bill => bill.category === selectedCategory);
+      filtered = filtered.filter(
+        (bill: Bill) => bill.category === selectedCategory,
+      );
     }
 
     filtered.sort((a, b) => {
@@ -154,7 +155,7 @@ const BillsScreen = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      await fetchBills();
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -170,7 +171,7 @@ const BillsScreen = () => {
         style: 'destructive',
         onPress: async () => {
           try {
-            await deleteBill(billId).unwrap();
+            await deleteBill(billId);
             Alert.alert('成功', '账单已删除');
           } catch (error) {
             Alert.alert('错误', '删除失败，请重试');
@@ -304,7 +305,7 @@ const BillsScreen = () => {
         keyExtractor={item => item.id}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing || isLoading}
+            refreshing={refreshing || loading}
             onRefresh={onRefresh}
           />
         }

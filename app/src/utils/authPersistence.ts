@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { store } from '@/store';
-import { loadStoredAuth } from '@/store/slices/authSlice';
+import { useAuthStore } from '@/store';
 import { User } from '@/types';
 
 export const loadPersistedAuth = async () => {
@@ -10,7 +9,7 @@ export const loadPersistedAuth = async () => {
 
     if (token && userStr) {
       const user: User = JSON.parse(userStr);
-      store.dispatch(loadStoredAuth({ user, token }));
+      useAuthStore.getState().setCredentials(user, token);
       return { user, token };
     }
     return null;

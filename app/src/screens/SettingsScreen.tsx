@@ -9,14 +9,11 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import { RootState } from '@/types';
-import { logout } from '@/store/slices/authSlice';
 import { storage } from '@/utils';
 import { useSyncStatus } from '@/hooks';
-import { useGetBillsQuery } from '@/store/api/baseApi';
+import { useAuthStore, useBillsStore } from '@/store';
 
 const SettingItem = ({
   icon,
@@ -71,10 +68,8 @@ const SettingSection = ({
 
 const SettingsScreen = () => {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { data: billsResponse } = useGetBillsQuery({});
-  const bills = billsResponse?.items || [];
+  const { user, logout: logoutAction } = useAuthStore();
+  const { bills } = useBillsStore();
   const { isSyncing, pendingChanges, startSync } = useSyncStatus();
 
   const [notifications, setNotifications] = useState(true);
@@ -88,7 +83,7 @@ const SettingsScreen = () => {
   };
 
   const confirmLogout = () => {
-    dispatch(logout() as any);
+    logoutAction();
     setShowLogoutModal(false);
   };
 

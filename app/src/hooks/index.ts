@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BackHandler, Alert } from 'react-native';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, Category } from '@/types';
 import { databaseService } from '@/services/database';
-import { logout as logoutAction } from '@/store/slices/authSlice';
+import { useAuthStore, useCategoriesStore } from '@/store';
 
 export const useForm = <T extends Record<string, any>>(initialValues: T) => {
   const [values, setValues] = useState<T>(initialValues);
@@ -95,33 +93,19 @@ export const useDebounce = <T>(value: T, delay: number): T => {
 };
 
 export const useCategories = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchCategories = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await databaseService.getCategories();
-      setCategories(data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { categories, loading, fetchCategories } = useCategoriesStore();
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    if (categories.length === 0) {
+      fetchCategories();
+    }
+  }, [categories.length, fetchCategories]);
 
   return { categories, loading, refreshCategories: fetchCategories };
 };
 
 export const useAuth = () => {
-  const dispatch = useDispatch();
-  const { user, token, isAuthenticated, loading, error } = useSelector(
-    (state: RootState) => state.auth,
-  );
+  const { user, token, isAuthenticated, logout: logoutAction } = useAuthStore();
 
   const logout = useCallback(() => {
     Alert.alert('退出登录', '确定要退出登录吗？', [
@@ -129,13 +113,13 @@ export const useAuth = () => {
       {
         text: '确定',
         onPress: () => {
-          dispatch(logoutAction());
+          logoutAction();
         },
       },
     ]);
-  }, [dispatch]);
+  }, [logoutAction]);
 
-  return { user, token, isAuthenticated, loading, error, logout };
+  return { user, token, isAuthenticated, logout };
 };
 
 export const useInterval = (callback: () => void, delay: number | null) => {

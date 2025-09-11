@@ -8,13 +8,11 @@ import {
   RefreshControl,
   Dimensions,
 } from 'react-native';
-import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import { RootState } from '@/types';
 import { formatCurrency, getMonthRange, calculateTotalAmount } from '@/utils';
 import { useSyncStatus } from '@/hooks';
-import { useGetBillsQuery } from '@/store/api/baseApi';
+import { useAuthStore, useBillsStore } from '@/store';
 
 const { width } = Dimensions.get('window');
 
@@ -76,9 +74,8 @@ const BillItem: React.FC<BillItemProps> = ({ bill }) => (
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { data: billsResponse, refetch } = useGetBillsQuery({});
-  const bills = billsResponse?.items || [];
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user } = useAuthStore();
+  const { bills, fetchBills } = useBillsStore();
   const [refreshing, setRefreshing] = useState(false);
   const { pendingChanges, startSync } = useSyncStatus();
 
@@ -97,7 +94,7 @@ const HomeScreen = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      await fetchBills();
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

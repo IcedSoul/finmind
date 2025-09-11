@@ -1,29 +1,40 @@
-import SQLite from 'react-native-sqlite-storage';
+import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 import { Bill } from '@/types';
-
-SQLite.DEBUG(true);
-SQLite.enablePromise(true);
 
 const DATABASE_NAME = 'finmind.db';
 
-let db: SQLite.SQLiteDatabase;
+let db: SQLite.SQLiteDatabase | null = null;
 
 export const initDatabase = async (): Promise<void> => {
   try {
-    db = await SQLite.openDatabase({
-      name: DATABASE_NAME,
-      location: 'default',
-    });
+    if (Platform.OS === 'web') {
+      console.log('Database initialization skipped for web platform');
+      return;
+    }
 
-    await createTables();
-    console.log('Database initialized successfully');
+    console.log('OPEN database:', DATABASE_NAME);
+    
+    // 使用expo-sqlite的新API
+    db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+
+    if (db) {
+      await createTables();
+      console.log('Database initialized successfully');
+    } else {
+      throw new Error('Failed to open database');
+    }
   } catch (error) {
     console.error('Database initialization failed:', error);
-    throw error;
+    console.warn('App will continue without local database functionality');
   }
 };
 
 const createTables = async (): Promise<void> => {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+
   const createUsersTable = `
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -59,14 +70,18 @@ const createTables = async (): Promise<void> => {
     );
   `;
 
-  await db.executeSql(createUsersTable);
-  await db.executeSql(createBillsTable);
-  await db.executeSql(createCategoriesTable);
+  await db.execAsync(createUsersTable);
+  await db.execAsync(createBillsTable);
+  await db.execAsync(createCategoriesTable);
 
   await insertDefaultCategories();
 };
 
 const insertDefaultCategories = async (): Promise<void> => {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+
   const defaultCategories = [
     { id: '1', name: '餐饮', icon: 'restaurant', color: '#FF6B6B' },
     { id: '2', name: '交通', icon: 'car', color: '#4ECDC4' },
@@ -80,12 +95,12 @@ const insertDefaultCategories = async (): Promise<void> => {
 
   for (const category of defaultCategories) {
     const checkSql = 'SELECT id FROM categories WHERE id = ?';
-    const [result] = await db.executeSql(checkSql, [category.id]);
+    const result = await db.getFirstAsync(checkSql, [category.id]);
 
-    if (result.rows.length === 0) {
+    if (!result) {
       const insertSql =
         'INSERT INTO categories (id, name, icon, color) VALUES (?, ?, ?, ?)';
-      await db.executeSql(insertSql, [
+      await db.runAsync(insertSql, [
         category.id,
         category.name,
         category.icon,
@@ -95,37 +110,51 @@ const insertDefaultCategories = async (): Promise<void> => {
   }
 };
 
+const checkDatabase = (): boolean => {
+  if (!db) {
+    console.warn('Database not initialized, operation skipped');
+    return false;
+  }
+  return true;
+};
+
 export const databaseService = {
   async saveBill(bill: Bill): Promise<void> {
+    if (!checkDatabase()) return;
+
     const sql = `
       INSERT OR REPLACE INTO bills 
       (id, user_id, time, channel, merchant, type, amount, category, created_at, updated_at, synced)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    await db.executeSql(sql, [
-      bill.id,
-      bill.userId,
-      bill.time,
-      bill.channel,
-      bill.merchant,
-      bill.type,
-      bill.amount,
-      bill.category,
-      bill.createdAt,
-      bill.updatedAt,
-      0,
-    ]);
+    try {
+      await db!.runAsync(sql, [
+        bill.id,
+        bill.userId,
+        bill.time,
+        bill.channel,
+        bill.merchant,
+        bill.type,
+        bill.amount,
+        bill.category,
+        bill.createdAt,
+        bill.updatedAt,
+        0,
+      ]);
+    } catch (error) {
+      console.error('Failed to save bill:', error);
+    }
   },
 
   async getBills(limit: number = 20, offset: number = 0): Promise<Bill[]> {
-    const sql = 'SELECT * FROM bills ORDER BY time DESC LIMIT ? OFFSET ?';
-    const [result] = await db.executeSql(sql, [limit, offset]);
+    if (!checkDatabase()) return [];
 
-    const bills: Bill[] = [];
-    for (let i = 0; i < result.rows.length; i++) {
-      const row = result.rows.item(i);
-      bills.push({
+    try {
+      const sql = 'SELECT * FROM bills ORDER BY time DESC LIMIT ? OFFSET ?';
+      const results = await db!.getAllAsync(sql, [limit, offset]);
+
+      const bills: Bill[] = results.map((row: any) => ({
         id: row.id,
         userId: row.user_id,
         time: row.time,
@@ -136,20 +165,23 @@ export const databaseService = {
         category: row.category,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-      });
-    }
+      }));
 
-    return bills;
+      return bills;
+    } catch (error) {
+      console.error('Failed to get bills:', error);
+      return [];
+    }
   },
 
   async getUnsyncedBills(): Promise<Bill[]> {
-    const sql = 'SELECT * FROM bills WHERE synced = 0';
-    const [result] = await db.executeSql(sql);
+    if (!checkDatabase()) return [];
 
-    const bills: Bill[] = [];
-    for (let i = 0; i < result.rows.length; i++) {
-      const row = result.rows.item(i);
-      bills.push({
+    try {
+      const sql = 'SELECT * FROM bills WHERE synced = 0';
+      const results = await db!.getAllAsync(sql);
+
+      const bills: Bill[] = results.map((row: any) => ({
         id: row.id,
         userId: row.user_id,
         time: row.time,
@@ -160,37 +192,59 @@ export const databaseService = {
         category: row.category,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-      });
-    }
+      }));
 
-    return bills;
+      return bills;
+    } catch (error) {
+      console.error('Failed to get unsynced bills:', error);
+      return [];
+    }
   },
 
   async markBillsSynced(billIds: string[]): Promise<void> {
-    const placeholders = billIds.map(() => '?').join(',');
-    const sql = `UPDATE bills SET synced = 1 WHERE id IN (${placeholders})`;
-    await db.executeSql(sql, billIds);
+    if (!checkDatabase()) return;
+
+    try {
+      const placeholders = billIds.map(() => '?').join(',');
+      const sql = `UPDATE bills SET synced = 1 WHERE id IN (${placeholders})`;
+      await db!.runAsync(sql, billIds);
+    } catch (error) {
+      console.error('Failed to mark bills as synced:', error);
+    }
   },
 
   async deleteBill(id: string): Promise<void> {
-    const sql = 'DELETE FROM bills WHERE id = ?';
-    await db.executeSql(sql, [id]);
+    if (!checkDatabase()) return;
+
+    try {
+      const sql = 'DELETE FROM bills WHERE id = ?';
+      await db!.runAsync(sql, [id]);
+    } catch (error) {
+      console.error('Failed to delete bill:', error);
+    }
   },
 
   async getCategories(): Promise<any[]> {
-    const sql = 'SELECT * FROM categories';
-    const [result] = await db.executeSql(sql);
+    if (!checkDatabase()) return [];
 
-    const categories: any[] = [];
-    for (let i = 0; i < result.rows.length; i++) {
-      categories.push(result.rows.item(i));
+    try {
+      const sql = 'SELECT * FROM categories';
+      const categories = await db!.getAllAsync(sql);
+      return categories;
+    } catch (error) {
+      console.error('Failed to get categories:', error);
+      return [];
     }
-
-    return categories;
   },
 
   async clearAllData(): Promise<void> {
-    await db.executeSql('DELETE FROM bills');
-    await db.executeSql('DELETE FROM users');
+    if (!checkDatabase()) return;
+
+    try {
+      await db!.runAsync('DELETE FROM bills');
+      await db!.runAsync('DELETE FROM users');
+    } catch (error) {
+      console.error('Failed to clear data:', error);
+    }
   },
 };
