@@ -80,7 +80,7 @@ const HomeScreen = () => {
   const { pendingChanges, startSync } = useSyncStatus();
 
   const currentMonth = getMonthRange();
-  const monthlyBills = bills.filter(bill => {
+  const monthlyBills = bills?.filter(bill => {
     const billDate = new Date(bill.time);
     return billDate >= currentMonth.start && billDate <= currentMonth.end;
   });
@@ -89,7 +89,7 @@ const HomeScreen = () => {
   const monthlyExpense = calculateTotalAmount(monthlyBills, 'expense');
   const monthlyBalance = monthlyIncome - monthlyExpense;
 
-  const recentBills = bills.slice(0, 5);
+  const recentBills = bills?.slice(0, 5);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -224,7 +224,7 @@ const HomeScreen = () => {
             <Text style={styles.seeAllText}>查看全部</Text>
           </TouchableOpacity>
         </View>
-        {recentBills.length > 0 ? (
+        {recentBills?.length > 0 ? (
           recentBills.map((bill, index) => (
             <BillItem key={bill.id || index} bill={bill} />
           ))

@@ -32,7 +32,7 @@ export const billService = {
     type?: string;
   }): Promise<ApiResponse<PaginatedResponse<Bill>>> {
     try {
-      const response = await api.get('/bills', { params });
+      const response = await api.get('/api/v1/bills', { params });
       return {
         success: true,
         data: response.data,
@@ -47,7 +47,7 @@ export const billService = {
 
   async createBill(billData: CreateBillRequest): Promise<ApiResponse<Bill>> {
     try {
-      const response = await api.post('/bills', billData);
+      const response = await api.post('/api/v1/bills', billData);
       return {
         success: true,
         data: response.data.bill,
@@ -65,7 +65,7 @@ export const billService = {
     data: Partial<CreateBillRequest>,
   ): Promise<ApiResponse<Bill>> {
     try {
-      const response = await api.put(`/bills/${id}`, data);
+      const response = await api.put(`/api/v1/bills/${id}`, data);
       return {
         success: true,
         data: response.data.bill,
@@ -80,7 +80,7 @@ export const billService = {
 
   async deleteBill(id: string): Promise<ApiResponse<void>> {
     try {
-      await api.delete(`/bills/${id}`);
+      await api.delete(`/api/v1/bills/${id}`);
       return {
         success: true,
       };
@@ -96,7 +96,7 @@ export const billService = {
     bills: Bill[],
   ): Promise<ApiResponse<{ synced_count: number }>> {
     try {
-      const response = await api.post('/bills/sync', { bills });
+      const response = await api.post('/api/v1/bills/sync', { bills });
       return {
         success: true,
         data: response.data,
@@ -111,7 +111,7 @@ export const billService = {
 
   async getStatistics(): Promise<ApiResponse<any>> {
     try {
-      const response = await api.get('/bills/statistics');
+      const response = await api.get('/api/v1/bills/statistics');
       return {
         success: true,
         data: response.data,

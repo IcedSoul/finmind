@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useForm, useCategories } from '@/hooks';
@@ -164,9 +165,15 @@ const AddBillScreen = () => {
   const [billType, setBillType] = useState<BillType>(
     editingBill?.type || 'expense',
   );
+
+  const filteredCategories = useMemo(
+    () => categories.filter(category => category.type === billType),
+    [categories, billType],
+  );
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiProcessing, setAiProcessing] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const { values, errors, handleChange } = useForm({
     merchant: editingBill?.merchant || '',
@@ -381,7 +388,10 @@ const AddBillScreen = () => {
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>时间</Text>
-            <TouchableOpacity style={styles.timeSelector}>
+            <TouchableOpacity
+              style={styles.timeSelector}
+              onPress={() => setShowDatePicker(true)}
+            >
               <Text style={styles.timeText}>
                 {new Date(values.time).toLocaleString('zh-CN')}
               </Text>
@@ -406,30 +416,32 @@ const AddBillScreen = () => {
       <Modal
         visible={showCategoryModal}
         animationType="slide"
-        presentationStyle="pageSheet"
+        transparent={true}
         onRequestClose={() => setShowCategoryModal(false)}
       >
-        <View style={styles.categoryModalContainer}>
-          <View style={styles.categoryModalHeader}>
-            <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
-              <Icon name="x" size={24} color="#1C1C1E" />
-            </TouchableOpacity>
-            <Text style={styles.categoryModalTitle}>选择分类</Text>
-            <View style={styles.placeholderView} />
+        <View style={styles.categoryModalOverlay}>
+          <View style={styles.categoryModalContainer}>
+            <View style={styles.categoryModalHeader}>
+              <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
+                <Icon name="x" size={24} color="#1C1C1E" />
+              </TouchableOpacity>
+              <Text style={styles.categoryModalTitle}>选择分类</Text>
+              <View style={styles.placeholderView} />
+            </View>
+            <FlatList
+              data={filteredCategories}
+              renderItem={({ item }) => (
+                <CategoryItem
+                  category={item.name}
+                  setValue={setValue}
+                  setShowCategoryModal={setShowCategoryModal}
+                />
+              )}
+              keyExtractor={item => item.id}
+              numColumns={3}
+              contentContainerStyle={styles.categoryList}
+            />
           </View>
-          <FlatList
-            data={categories}
-            renderItem={({ item }) => (
-              <CategoryItem
-                category={item.name}
-                setValue={setValue}
-                setShowCategoryModal={setShowCategoryModal}
-              />
-            )}
-            keyExtractor={item => item.id}
-            numColumns={3}
-            contentContainerStyle={styles.categoryList}
-          />
         </View>
       </Modal>
 
@@ -439,6 +451,20 @@ const AddBillScreen = () => {
         aiProcessing={aiProcessing}
         handleAIRecognition={handleAIRecognition}
       />
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={new Date(values.time)}
+          mode="datetime"
+          display="default"
+          onChange={(event, selectedDate) => {
+            if (event.type === 'set' && selectedDate) {
+              setValue('time', selectedDate.toISOString());
+            }
+            setShowDatePicker(false);
+          }}
+        />
+      )}
     </View>
   );
 };
@@ -517,10 +543,14 @@ const styles = StyleSheet.create({
     borderColor: '#E5E5EA',
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    height: 48,
     fontSize: 16,
     color: '#1C1C1E',
     backgroundColor: '#FFFFFF',
+    textAlignVertical: 'center',
+    paddingTop: 0,
+    paddingBottom: 0,
+    includeFontPadding: false,
   },
   inputError: {
     borderColor: '#FF3B30',
@@ -546,11 +576,15 @@ const styles = StyleSheet.create({
   amountInput: {
     flex: 1,
     paddingHorizontal: 8,
-    paddingVertical: 12,
+    height: 48,
     fontSize: 18,
     fontWeight: '600',
     color: '#1C1C1E',
     borderWidth: 0,
+    textAlignVertical: 'center',
+    paddingTop: 0,
+    paddingBottom: 0,
+    includeFontPadding: false,
   },
   categorySelector: {
     flexDirection: 'row',
@@ -623,18 +657,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  categoryModalContainer: {
+  categoryModalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  categoryModalContainer: {
     backgroundColor: '#F2F2F7',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '60%',
   },
   categoryModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 20,
     paddingBottom: 20,
     backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
   },

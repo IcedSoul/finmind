@@ -56,7 +56,7 @@ const LoginScreen = () => {
         password: values.password,
       });
 
-      setCredentials(result.user, result.token);
+      await setCredentials(result.user, result.token);
       Alert.alert('成功', '登录成功');
     } catch (loginError: any) {
       Alert.alert('登录失败', loginError.message || '请检查网络连接');
@@ -222,6 +222,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#1C1C1E',
+    height: '100%',
+    paddingVertical: 0,
+    justifyContent: 'center',
+    textAlignVertical: 'center',
   },
   inputError: {
     borderWidth: 1,

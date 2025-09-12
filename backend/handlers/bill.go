@@ -67,7 +67,7 @@ func (h *BillHandler) GetBills(c *gin.Context) {
 		return
 	}
 
-	orderBy := "bill_date DESC"
+	orderBy := "bill_time DESC"
 	if query.SortBy != "" {
 		switch query.SortBy {
 		case "amount":
@@ -77,7 +77,7 @@ func (h *BillHandler) GetBills(c *gin.Context) {
 		case "created_at":
 			orderBy = "created_at"
 		default:
-			orderBy = "bill_date"
+			orderBy = "bill_time"
 		}
 		if query.SortOrder == "asc" {
 			orderBy += " ASC"

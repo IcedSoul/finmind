@@ -117,6 +117,10 @@ const BillsScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const filteredAndSortedBills = useMemo(() => {
+    if (!bills || !Array.isArray(bills)) {
+      return [];
+    }
+
     let filtered = bills;
 
     if (searchText) {
@@ -364,6 +368,9 @@ const styles = StyleSheet.create({
     height: 40,
     fontSize: 16,
     color: '#1C1C1E',
+    paddingVertical: 0,
+    justifyContent: 'center',
+    textAlignVertical: 'center',
   },
   filterToggle: {
     width: 40,

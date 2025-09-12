@@ -20,9 +20,12 @@ export const useCategoriesStore = create<CategoriesState>(set => ({
   fetchCategories: async () => {
     set({ loading: true, error: null });
     try {
-      const categories = await apiService.getCategories();
-      set({ categories, loading: false });
+      console.log('Fetching categories...');
+      const categoryList = await apiService.getCategories();
+      console.log('Categories fetched:', categoryList);
+      set({ categories: categoryList.categories, loading: false });
     } catch (error) {
+      console.error('Error fetching categories:', error);
       set({
         error:
           error instanceof Error ? error.message : 'Failed to fetch categories',

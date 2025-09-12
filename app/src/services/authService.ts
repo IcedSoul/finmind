@@ -15,7 +15,7 @@ export const authService = {
     credentials: LoginRequest,
   ): Promise<ApiResponse<{ token: string; user: User }>> {
     try {
-      const response = await api.post('/auth/login', credentials);
+      const response = await api.post('/api/v1/auth/login', credentials);
       return {
         success: true,
         data: response.data,
@@ -32,7 +32,7 @@ export const authService = {
     userData: RegisterRequest,
   ): Promise<ApiResponse<{ token: string; message: string }>> {
     try {
-      const response = await api.post('/auth/register', userData);
+      const response = await api.post('/api/v1/auth/register', userData);
       return {
         success: true,
         data: response.data,
@@ -47,7 +47,7 @@ export const authService = {
 
   async validateToken(token: string): Promise<ApiResponse<User>> {
     try {
-      const response = await api.get('/auth/validate', {
+      const response = await api.get('/api/v1/auth/validate', {
         headers: {
           Authorization: `Bearer ${token}`,
         },

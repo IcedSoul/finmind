@@ -25,8 +25,11 @@ export interface Bill {
 export interface Category {
   id: string;
   name: string;
+  type: 'income' | 'expense';
   icon: string;
   color: string;
+  is_default?: boolean;
+  user_id?: string;
 }
 
 export interface AuthState {
@@ -101,6 +104,10 @@ export interface StatisticsData {
   balance: number;
   categoryStats: CategoryStat[];
   trendData: TrendData[];
+}
+
+export interface CategoryListResponse {
+  categories: Category[];
 }
 
 export interface CategoryStat {

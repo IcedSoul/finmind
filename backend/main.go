@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"finmind-backend/config"
+	"finmind-backend/database"
 	"finmind-backend/routes"
 )
 
@@ -17,9 +18,22 @@ func main() {
 
 	cfg := config.Load()
 
+	db, err := database.Connect(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+	if err := database.Migrate(db); err != nil {
+		log.Fatal("Failed to migrate database:", err)
+	}
+
+	if err := database.SeedData(db); err != nil {
+		log.Fatal("Failed to seed database:", err)
+	}
+
 	r := gin.Default()
 
-	routes.SetupRoutes(r, nil, cfg)
+	routes.SetupRoutes(r, db, cfg)
 
 	port := os.Getenv("PORT")
 	if port == "" {

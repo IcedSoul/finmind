@@ -123,6 +123,10 @@ export const storage = {
 };
 
 export const groupBillsByDate = (bills: Bill[]): { [key: string]: Bill[] } => {
+  if (!bills || !Array.isArray(bills)) {
+    return {};
+  }
+
   return bills.reduce(
     (groups, bill) => {
       const date = formatDate(bill.time);
@@ -140,6 +144,10 @@ export const calculateTotalAmount = (
   bills: Bill[],
   type?: 'income' | 'expense',
 ): number => {
+  if (!bills || !Array.isArray(bills)) {
+    return 0;
+  }
+
   return bills
     .filter(bill => !type || bill.type === type)
     .reduce((total, bill) => total + bill.amount, 0);

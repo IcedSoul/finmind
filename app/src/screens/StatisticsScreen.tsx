@@ -263,7 +263,7 @@ const StatisticsScreen = () => {
   };
 
   const periodRange = getPeriodRange();
-  const periodBills = bills.filter((bill: Bill) => {
+  const periodBills = bills?.filter((bill: Bill) => {
     const billDate = new Date(bill.time);
     return billDate >= periodRange.start && billDate <= periodRange.end;
   });
@@ -276,7 +276,7 @@ const StatisticsScreen = () => {
   const categoryStats = useMemo(() => {
     const stats: { [key: string]: { income: number; expense: number } } = {};
 
-    periodBills.forEach((bill: Bill) => {
+    periodBills?.forEach((bill: Bill) => {
       if (!stats[bill.category]) {
         stats[bill.category] = { income: 0, expense: 0 };
       }
@@ -307,7 +307,7 @@ const StatisticsScreen = () => {
       const dayStart = new Date(date.setHours(0, 0, 0, 0));
       const dayEnd = new Date(date.setHours(23, 59, 59, 999));
 
-      const dayBills = bills.filter((bill: Bill) => {
+      const dayBills = bills?.filter((bill: Bill) => {
         const billDate = new Date(bill.time);
         return billDate >= dayStart && billDate <= dayEnd;
       });

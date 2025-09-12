@@ -14,7 +14,7 @@ export const initDatabase = async (): Promise<void> => {
     }
 
     console.log('OPEN database:', DATABASE_NAME);
-    
+
     // 使用expo-sqlite的新API
     db = await SQLite.openDatabaseAsync(DATABASE_NAME);
 

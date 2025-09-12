@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:8080/api';
+export const API_BASE_URL = 'http://10.86.122.212:8080';
 
 export const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token',

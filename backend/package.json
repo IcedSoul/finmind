@@ -1,0 +1,14 @@
+{
+  "name": "finmind-backend",
+  "version": "1.0.0",
+  "description": "FinMind backend API server",
+  "scripts": {
+    "start": "go run main.go",
+    "dev": "go run main.go",
+    "build": "go build -o bin/finmind-backend main.go",
+    "clean": "Remove-Item -Path bin -Recurse -Force -ErrorAction SilentlyContinue"
+  },
+  "keywords": ["golang", "api", "finmind"],
+  "author": "",
+  "license": "ISC"
+}

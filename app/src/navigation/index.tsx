@@ -82,9 +82,9 @@ const MainTabs = () => {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E5E5EA',
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
+          paddingBottom: 20,
+          paddingTop: 8,
+          height: 80,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -121,6 +121,7 @@ const MainTabs = () => {
         component={BillsScreen}
         options={{
           title: '账单',
+          headerShown: false,
         }}
       />
       <Tab.Screen
@@ -128,6 +129,7 @@ const MainTabs = () => {
         component={StatisticsScreen}
         options={{
           title: '统计',
+          headerShown: false,
         }}
       />
       <Tab.Screen
@@ -135,6 +137,7 @@ const MainTabs = () => {
         component={SettingsScreen}
         options={{
           title: '设置',
+          headerShown: false,
         }}
       />
     </Tab.Navigator>
@@ -158,36 +161,16 @@ const AppNavigator = () => {
             name="AddBill"
             component={AddBillScreen}
             options={{
-              headerShown: true,
-              title: '添加账单',
+              headerShown: false,
               animation: 'slide_from_bottom',
-              headerStyle: {
-                backgroundColor: '#FFFFFF',
-              },
-              headerTitleStyle: {
-                fontSize: 18,
-                fontWeight: '600',
-                color: '#1C1C1E',
-              },
-              headerTintColor: '#007AFF',
             }}
           />
           <Stack.Screen
             name="Import"
             component={ImportBillScreen}
             options={{
-              headerShown: true,
-              title: '导入账单',
+              headerShown: false,
               animation: 'slide_from_right',
-              headerStyle: {
-                backgroundColor: '#FFFFFF',
-              },
-              headerTitleStyle: {
-                fontSize: 18,
-                fontWeight: '600',
-                color: '#1C1C1E',
-              },
-              headerTintColor: '#007AFF',
             }}
           />
         </>

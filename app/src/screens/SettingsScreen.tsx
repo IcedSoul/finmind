@@ -214,7 +214,7 @@ const SettingsScreen = () => {
           <SettingItem
             icon="trash-2"
             title="清除本地数据"
-            subtitle={`当前有 ${bills.length} 条记录`}
+            subtitle={`当前有 ${bills?.length || 0} 条记录`}
             onPress={handleClearData}
           />
         </SettingSection>

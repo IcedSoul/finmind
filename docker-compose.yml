@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: finmind-postgres
+    environment:
+      POSTGRES_DB: finmind
+      POSTGRES_USER: finmind
+      POSTGRES_PASSWORD: finmind123
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - finmind-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: finmind-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - finmind-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  adminer:
+    image: adminer:latest
+    container_name: finmind-adminer
+    ports:
+      - "8089:8080"
+    networks:
+      - finmind-network
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  finmind-network:
+    driver: bridge

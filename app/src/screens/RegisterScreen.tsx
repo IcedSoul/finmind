@@ -303,6 +303,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#1C1C1E',
+    height: '100%',
+    paddingVertical: 0,
+    justifyContent: 'center',
+    textAlignVertical: 'center',
   },
   inputError: {
     borderWidth: 1,
