@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -90,6 +90,10 @@ const HomeScreen = () => {
   const monthlyBalance = monthlyIncome - monthlyExpense;
 
   const recentBills = bills?.slice(0, 5);
+
+  useEffect(() => {
+    fetchBills();
+  }, [fetchBills]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -226,7 +230,7 @@ const HomeScreen = () => {
         </View>
         {recentBills?.length > 0 ? (
           recentBills.map((bill, index) => (
-            <BillItem key={bill.id || index} bill={bill} />
+            <BillItem key={bill.id.toString() || index} bill={bill} />
           ))
         ) : (
           <View style={styles.emptyState}>

@@ -11,8 +11,9 @@ import (
 )
 
 type Claims struct {
-	UserID uint   `json:"user_id"`
-	Email  string `json:"email"`
+	UserID    uint   `json:"user_id"`
+	Email     string `json:"email"`
+	TokenType string `json:"token_type"`
 	jwt.RegisteredClaims
 }
 
@@ -39,6 +40,12 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 
 		if err != nil || !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Abort()
+			return
+		}
+
+		if claims.TokenType != "access" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type"})
 			c.Abort()
 			return
 		}

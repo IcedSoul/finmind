@@ -59,7 +59,7 @@ const BillItem: React.FC<BillItemProps> = ({ bill, onEdit, onDelete }) => (
   <TouchableOpacity
     style={styles.billItem}
     onPress={() => onEdit(bill)}
-    onLongPress={() => onDelete(bill.id)}
+    onLongPress={() => onDelete(bill.id.toString())}
   >
     <View style={styles.billContent}>
       <View style={styles.billInfo}>
@@ -306,7 +306,7 @@ const BillsScreen = () => {
       <FlatList
         data={flatListData}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id.toString()}
         refreshControl={
           <RefreshControl
             refreshing={refreshing || loading}

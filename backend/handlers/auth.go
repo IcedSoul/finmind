@@ -34,8 +34,9 @@ type RegisterRequest struct {
 }
 
 type AuthResponse struct {
-	User  models.UserResponse `json:"user"`
-	Token string              `json:"token"`
+	User         models.UserResponse `json:"user"`
+	AccessToken  string              `json:"access_token"`
+	RefreshToken string              `json:"refresh_token"`
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -68,15 +69,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	token, err := h.generateToken(user.ID, user.Email)
+	accessToken, refreshToken, err := h.generateTokens(user.ID, user.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, AuthResponse{
-		User:  user.ToResponse(),
-		Token: token,
+		User:         user.ToResponse(),
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	})
 }
 
@@ -98,15 +100,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.generateToken(user.ID, user.Email)
+	accessToken, refreshToken, err := h.generateTokens(user.ID, user.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
 		return
 	}
 
 	c.JSON(http.StatusOK, AuthResponse{
-		User:  user.ToResponse(),
-		Token: token,
+		User:         user.ToResponse(),
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	})
 }
 
@@ -162,16 +165,88 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, user.ToResponse())
 }
 
-func (h *AuthHandler) generateToken(userID uint, email string) (string, error) {
-	claims := middleware.Claims{
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type RefreshTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	var req RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	claims := &middleware.Claims{}
+	token, err := jwt.ParseWithClaims(req.RefreshToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(h.cfg.JWTSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+		return
+	}
+
+	if claims.TokenType != "refresh" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type"})
+		return
+	}
+
+	var user models.User
+	if err := h.db.First(&user, claims.UserID).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	accessToken, refreshToken, err := h.generateTokens(user.ID, user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
+		return
+	}
+
+	c.JSON(http.StatusOK, RefreshTokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
+}
+
+func (h *AuthHandler) generateTokens(userID uint, email string) (string, string, error) {
+	accessClaims := middleware.Claims{
 		UserID: userID,
 		Email:  email,
+		TokenType: "access",
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(h.cfg.JWTSecret))
+	refreshClaims := middleware.Claims{
+		UserID: userID,
+		Email:  email,
+		TokenType: "refresh",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+
+	accessTokenString, err := accessToken.SignedString([]byte(h.cfg.JWTSecret))
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshTokenString, err := refreshToken.SignedString([]byte(h.cfg.JWTSecret))
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessTokenString, refreshTokenString, nil
 }

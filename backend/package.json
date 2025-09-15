@@ -8,7 +8,14 @@
     "build": "go build -o bin/finmind-backend main.go",
     "clean": "Remove-Item -Path bin -Recurse -Force -ErrorAction SilentlyContinue"
   },
-  "keywords": ["golang", "api", "finmind"],
+  "keywords": [
+    "golang",
+    "api",
+    "finmind"
+  ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "base-64": "^1.0.0"
+  }
 }

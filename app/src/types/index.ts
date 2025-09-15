@@ -8,18 +8,16 @@ export interface User {
 }
 
 export interface Bill {
-  id: string;
-  userId: string;
-  time: string;
-  channel: string;
-  merchant: string;
+  id: number;
   type: 'income' | 'expense';
   amount: number;
   category: string;
+  merchant: string;
   description?: string;
+  time: string;
   synced?: boolean;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Category {
@@ -81,10 +79,10 @@ export interface AuthResponse {
 export interface CreateBillRequest {
   type: 'income' | 'expense';
   amount: number;
-  category: string;
+  category_id: number;
   merchant: string;
   description?: string;
-  time: string;
+  bill_time: string;
 }
 
 export interface UpdateBillRequest extends Partial<CreateBillRequest> {
@@ -202,12 +200,16 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
+export interface PaginationInfo {
   page: number;
   limit: number;
-  totalPages: number;
+  total: number;
+  total_pages: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  pagination: PaginationInfo;
 }
 
 export interface BillState {

@@ -12,6 +12,7 @@ import AddBillScreen from '@/screens/AddBillScreen';
 import ImportBillScreen from '@/screens/ImportBillScreen';
 import StatisticsScreen from '@/screens/StatisticsScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
+import ProfileScreen from '@/screens/ProfileScreen';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -20,6 +21,7 @@ export type RootStackParamList = {
   Register: undefined;
   AddBill: { bill?: any } | undefined;
   Import: undefined;
+  Profile: undefined;
 };
 
 export type MainTabParamList = {
@@ -168,6 +170,14 @@ const AppNavigator = () => {
           <Stack.Screen
             name="Import"
             component={ImportBillScreen}
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="Profile"
+            component={ProfileScreen}
             options={{
               headerShown: false,
               animation: 'slide_from_right',

@@ -38,9 +38,9 @@ export const useBillsStore = create<BillsState>((set, _get) => ({
       );
       set({
         bills: response.items,
-        currentPage: response.page,
-        totalPages: response.totalPages,
-        total: response.total,
+        currentPage: response.pagination.page,
+        totalPages: response.pagination.total_pages,
+        total: response.pagination.total,
         loading: false,
       });
     } catch (error) {
@@ -72,7 +72,9 @@ export const useBillsStore = create<BillsState>((set, _get) => ({
     try {
       const updatedBill = await apiService.updateBill(id, billData);
       set(state => ({
-        bills: state.bills.map(bill => (bill.id === id ? updatedBill : bill)),
+        bills: state.bills.map(bill =>
+          bill.id.toString() === id ? updatedBill : bill,
+        ),
         loading: false,
       }));
     } catch (error) {
@@ -88,7 +90,7 @@ export const useBillsStore = create<BillsState>((set, _get) => ({
     try {
       await apiService.deleteBill(id);
       set(state => ({
-        bills: state.bills.filter(bill => bill.id !== id),
+        bills: state.bills.filter(bill => bill.id.toString() !== id),
         loading: false,
       }));
     } catch (error) {

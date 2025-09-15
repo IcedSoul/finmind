@@ -1,0 +1,103 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "go: build backend",
+            "type": "shell",
+            "command": "go",
+            "args": [
+                "build",
+                "-o",
+                "bin/finmind-backend",
+                "main.go"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": "$go"
+        },
+        {
+            "label": "go: run backend",
+            "type": "shell",
+            "command": "go",
+            "args": [
+                "run",
+                "main.go"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": "$go",
+            "isBackground": true
+        },
+        {
+            "label": "go: test backend",
+            "type": "shell",
+            "command": "go",
+            "args": [
+                "test",
+                "-v",
+                "./..."
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": "$go"
+        },
+        {
+            "label": "go: clean backend",
+            "type": "shell",
+            "command": "Remove-Item",
+            "args": [
+                "-Path",
+                "bin",
+                "-Recurse",
+                "-Force",
+                "-ErrorAction",
+                "SilentlyContinue"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        }
+    ]
+}

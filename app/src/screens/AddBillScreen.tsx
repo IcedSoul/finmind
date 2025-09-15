@@ -174,6 +174,8 @@ const AddBillScreen = () => {
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiProcessing, setAiProcessing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
+  const [datePickerMode, setDatePickerMode] = useState<'date' | 'time'>('date');
 
   const { values, errors, handleChange } = useForm({
     merchant: editingBill?.merchant || '',
@@ -212,17 +214,26 @@ const AddBillScreen = () => {
     }
 
     try {
+      // 找到选中分类的ID
+      const selectedCategory = categories.find(
+        cat => cat.name === values.category,
+      );
+      if (!selectedCategory) {
+        Alert.alert('错误', '无效的分类选择');
+        return;
+      }
+
       const billData = {
         merchant: values.merchant,
         amount: parseFloat(values.amount),
-        category: values.category,
+        category_id: parseInt(selectedCategory.id),
         description: values.description,
         type: billType,
-        time: values.time,
+        bill_time: values.time,
       };
 
       if (isEditing && editingBill) {
-        await updateBill(editingBill.id, billData);
+        await updateBill(editingBill.id.toString(), billData);
         Alert.alert('成功', '账单已更新');
       } else {
         await createBill(billData);
@@ -388,15 +399,39 @@ const AddBillScreen = () => {
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>时间</Text>
-            <TouchableOpacity
-              style={styles.timeSelector}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={styles.timeText}>
-                {new Date(values.time).toLocaleString('zh-CN')}
-              </Text>
-              <Icon name="calendar" size={16} color="#C7C7CC" />
-            </TouchableOpacity>
+            <View style={styles.timeContainer}>
+              <TouchableOpacity
+                style={[styles.timeSelector, styles.dateSelector]}
+                onPress={() => {
+                  setTempDate(new Date(values.time));
+                  setDatePickerMode('date');
+                  setShowDatePicker(true);
+                }}
+              >
+                <Text style={styles.timeText}>
+                  {new Date(values.time).toLocaleDateString('zh-CN')}
+                </Text>
+                <Icon name="calendar" size={16} color="#C7C7CC" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.timeSelector, styles.timeOnlySelector]}
+                onPress={() => {
+                  setTempDate(new Date(values.time));
+                  setDatePickerMode('time');
+                  setShowDatePicker(true);
+                }}
+              >
+                <Text style={styles.timeText}>
+                  {new Date(values.time).toLocaleTimeString('zh-CN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false,
+                  })}
+                </Text>
+                <Icon name="clock" size={16} color="#C7C7CC" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -454,15 +489,32 @@ const AddBillScreen = () => {
 
       {showDatePicker && (
         <DateTimePicker
-          value={new Date(values.time)}
-          mode="datetime"
+          value={tempDate}
+          mode={datePickerMode}
           display="default"
           onChange={(event, selectedDate) => {
             if (event.type === 'set' && selectedDate) {
-              setValue('time', selectedDate.toISOString());
+              if (datePickerMode === 'date') {
+                const currentTime = new Date(values.time);
+                const newDateTime = new Date(selectedDate);
+                newDateTime.setHours(currentTime.getHours());
+                newDateTime.setMinutes(currentTime.getMinutes());
+                newDateTime.setSeconds(currentTime.getSeconds());
+                setValue('time', newDateTime.toISOString());
+              } else {
+                const currentDate = new Date(values.time);
+                const newDateTime = new Date(currentDate);
+                newDateTime.setHours(selectedDate.getHours());
+                newDateTime.setMinutes(selectedDate.getMinutes());
+                newDateTime.setSeconds(selectedDate.getSeconds());
+                setValue('time', newDateTime.toISOString());
+              }
             }
             setShowDatePicker(false);
           }}
+          themeVariant="light"
+          textColor="#1C1C1E"
+          accentColor="#007AFF"
         />
       )}
     </View>
@@ -617,6 +669,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#8E8E93',
   },
+  timeContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   timeSelector: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -628,9 +684,57 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#FFFFFF',
   },
+  dateSelector: {
+    flex: 1.2,
+  },
+  timeOnlySelector: {
+    flex: 1,
+  },
   timeText: {
     fontSize: 16,
     color: '#1C1C1E',
+  },
+  datePickerModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  datePickerModalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '50%',
+  },
+  datePickerModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  datePickerModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1C1C1E',
+  },
+  datePickerCancelText: {
+    fontSize: 16,
+    color: '#8E8E93',
+  },
+  datePickerConfirmText: {
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  datePickerContent: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  dateTimePicker: {
+    width: '100%',
+    height: 200,
   },
   errorText: {
     fontSize: 14,

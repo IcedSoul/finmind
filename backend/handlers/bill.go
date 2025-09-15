@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -49,20 +51,21 @@ func (h *BillHandler) GetBills(c *gin.Context) {
 	}
 	if query.StartDate != "" {
 		if startDate, err := time.Parse("2006-01-02", query.StartDate); err == nil {
-			db = db.Where("bill_date >= ?", startDate)
+			db = db.Where("bill_time >= ?", startDate)
 		}
 	}
 	if query.EndDate != "" {
 		if endDate, err := time.Parse("2006-01-02", query.EndDate); err == nil {
-			db = db.Where("bill_date <= ?", endDate.Add(24*time.Hour-time.Second))
+			db = db.Where("bill_time <= ?", endDate.Add(24*time.Hour-time.Second))
 		}
 	}
 	if query.Search != "" {
-		db = db.Where("merchant ILIKE ? OR description ILIKE ?", "%"+query.Search+"%", "%"+query.Search+"%")
+		db = db.Where("merchant LIKE ? OR description LIKE ?", "%"+query.Search+"%", "%"+query.Search+"%")
 	}
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
+		log.Printf("[GetBills] Count error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count bills"})
 		return
 	}
@@ -98,15 +101,8 @@ func (h *BillHandler) GetBills(c *gin.Context) {
 		billResponses[i] = bill.ToResponse()
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"bills": billResponses,
-		"pagination": gin.H{
-			"page":       query.Page,
-			"limit":      query.Limit,
-			"total":      total,
-			"total_pages": (total + int64(query.Limit) - 1) / int64(query.Limit),
-		},
-	})
+	response := models.NewPaginatedResponse(billResponses, query.Page, query.Limit, total)
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *BillHandler) GetBill(c *gin.Context) {
@@ -134,15 +130,21 @@ func (h *BillHandler) GetBill(c *gin.Context) {
 func (h *BillHandler) CreateBill(c *gin.Context) {
 	userID, err := middleware.GetUserID(c)
 	if err != nil {
+		log.Printf("[CreateBill] Failed to get user ID: %v", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
 	var req models.CreateBillRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("[CreateBill] JSON binding failed: %v", err)
+		log.Printf("[CreateBill] Request struct: %+v", req)
+		c.Header("Content-Type", "application/json")
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request data: %v", err)})
 		return
 	}
+
+	log.Printf("[CreateBill] Parsed request: %+v", req)
 
 	var category models.Category
 	if err := h.db.First(&category, req.CategoryID).Error; err != nil {

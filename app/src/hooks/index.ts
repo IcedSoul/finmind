@@ -105,7 +105,7 @@ export const useCategories = () => {
 };
 
 export const useAuth = () => {
-  const { user, token, isAuthenticated, logout: logoutAction } = useAuthStore();
+  const { user, accessToken, refreshToken, isAuthenticated, logout: logoutAction } = useAuthStore();
 
   const logout = useCallback(() => {
     Alert.alert('退出登录', '确定要退出登录吗？', [
@@ -119,7 +119,7 @@ export const useAuth = () => {
     ]);
   }, [logoutAction]);
 
-  return { user, token, isAuthenticated, logout };
+  return { user, accessToken, refreshToken, isAuthenticated, logout };
 };
 
 export const useInterval = (callback: () => void, delay: number | null) => {

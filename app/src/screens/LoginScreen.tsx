@@ -56,7 +56,11 @@ const LoginScreen = () => {
         password: values.password,
       });
 
-      await setCredentials(result.user, result.token);
+      await setCredentials(
+        result.user,
+        result.access_token,
+        result.refresh_token,
+      );
       Alert.alert('成功', '登录成功');
     } catch (loginError: any) {
       Alert.alert('登录失败', loginError.message || '请检查网络连接');

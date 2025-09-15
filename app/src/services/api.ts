@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@/utils/constants';
+import { useAuthStore } from '@/store';
 import type {
   User,
   Bill,
@@ -12,22 +13,55 @@ import type {
 
 class ApiService {
   private async getHeaders(): Promise<Record<string, string>> {
-    const token = await AsyncStorage.getItem('token');
-    console.log('Token from AsyncStorage:', token ? 'exists' : 'not found');
+    const accessToken = await AsyncStorage.getItem('access_token');
+    console.log(
+      'Access Token from AsyncStorage:',
+      accessToken ? 'exists' : 'not found',
+    );
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
     }
 
     return headers;
   }
 
+  private async refreshToken(): Promise<boolean> {
+    try {
+      const refreshToken = await AsyncStorage.getItem('refresh_token');
+      if (!refreshToken) {
+        return false;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+      await AsyncStorage.setItem('access_token', data.access_token);
+      await AsyncStorage.setItem('refresh_token', data.refresh_token);
+      return true;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return false;
+    }
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
+    isRetry: boolean = false,
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     const headers = await this.getHeaders();
@@ -40,6 +74,16 @@ class ApiService {
       },
     });
 
+    if (response.status === 401 && !isRetry) {
+      const refreshSuccess = await this.refreshToken();
+      if (refreshSuccess) {
+        return this.request<T>(endpoint, options, true);
+      } else {
+        useAuthStore.getState().logout();
+        throw new Error('Authentication failed. Please login again.');
+      }
+    }
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -49,7 +93,7 @@ class ApiService {
 
   async login(
     credentials: LoginRequest,
-  ): Promise<{ token: string; user: User }> {
+  ): Promise<{ access_token: string; refresh_token: string; user: User }> {
     return this.request('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
@@ -58,7 +102,7 @@ class ApiService {
 
   async register(
     userData: RegisterRequest,
-  ): Promise<{ token: string; user: User }> {
+  ): Promise<{ access_token: string; refresh_token: string; user: User }> {
     return this.request('/api/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
@@ -71,9 +115,14 @@ class ApiService {
 
   async getBills(
     page: number = 1,
-    limit: number = 20,
+    limit: number = 10,
   ): Promise<PaginatedResponse<Bill>> {
-    return this.request(`/api/v1/bills?page=${page}&limit=${limit}`);
+    return this.request<PaginatedResponse<Bill>>(
+      `/api/v1/bills?page=${page}&limit=${limit}`,
+      {
+        method: 'GET',
+      },
+    );
   }
 
   async createBill(billData: CreateBillRequest): Promise<Bill> {
@@ -101,6 +150,13 @@ class ApiService {
 
   async getCategories(): Promise<CategoryListResponse> {
     return await this.request<CategoryListResponse>('/api/v1/categories');
+  }
+
+  async updateProfile(data: { name: string }): Promise<User> {
+    return this.request<User>('/api/v1/user/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 }
 

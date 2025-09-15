@@ -168,7 +168,16 @@ const ImportBillScreen = () => {
     try {
       for (const bill of selectedBills) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { selected, ...billData } = bill;
+        const { selected, category, time, ...restBillData } = bill;
+        
+        // 需要将category名称转换为category_id，这里暂时使用1作为默认值
+        // 在实际应用中，应该根据category名称查找对应的ID
+        const billData = {
+          ...restBillData,
+          category_id: 1, // TODO: 根据category名称查找实际的category_id
+          bill_time: time,
+        };
+        
         await billService.createBill(billData);
       }
 
