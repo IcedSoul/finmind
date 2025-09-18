@@ -8,6 +8,7 @@ export interface User {
 }
 
 export interface Bill {
+  channel: string;
   id: number;
   type: 'income' | 'expense';
   amount: number;

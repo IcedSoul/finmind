@@ -1,0 +1,484 @@
+{
+  "welcome": {
+    "intro": {
+      "title": "欢迎使用FinMind财务管理应用",
+      "haveAccount": "我有账户",
+      "createAccount": "创建账户"
+    },
+    "step1": {
+      "title": "智能财务管理",
+      "subtitle": "FinMind",
+      "description": "全面管理您的收入和支出，提供高级功能"
+    },
+    "step2": {
+      "title": "分析报告",
+      "subtitle": "精确统计",
+      "description": "查看您财务状况的详细报告"
+    },
+    "step3": {
+      "title": "财务规划",
+      "subtitle": "目标设定",
+      "description": "设定财务目标并跟踪进度"
+    },
+    "step4": {
+      "title": "高度安全",
+      "subtitle": "数据保护",
+      "description": "通过高级加密技术全面保护您的财务信息"
+    }
+  },
+  "language": {
+    "selection": {
+      "title": "请选择您的语言",
+      "english": "English",
+      "chinese": "中文"
+    }
+  },
+  "about": {
+    "aboutApp": "关于理财助手应用",
+    "aboutText1": "FinMind是一款综合性的财务管理应用，旨在帮助您跟踪支出、管理预算并实现财务目标。",
+    "aboutText2": "我们的使命是让个人财务管理变得简单、直观，让每个人都能轻松使用。",
+    "appName": "FinMind",
+    "appSlogan": "智能财务管理，化繁为简",
+    "build": "构建",
+    "copyright": "© 2023 理财助手。保留所有权利。",
+    "developmentTeam": "开发团队",
+    "instagram": "Instagram",
+    "legalTerms": "法律条款",
+    "linkedin": "LinkedIn",
+    "privacyPolicy": "隐私政策",
+    "privacyPolicyDescription": "阅读我们的隐私政策，了解我们如何保护您的数据",
+    "rateApp": "评价应用",
+    "releaseDate": "发布日期",
+    "shareApp": "分享应用",
+    "socialNetworks": "社交网络",
+    "softwareLicenses": "软件许可证",
+    "softwareLicensesDescription": "查看此应用中使用的第三方软件许可证",
+    "teamMember1Name": "张伟",
+    "teamMember1Role": "首席开发工程师",
+    "teamMember2Name": "李小雅",
+    "teamMember2Role": "UI/UX设计师",
+    "teamMember3Name": "陈明",
+    "teamMember3Role": "后端开发工程师",
+    "telegram": "Telegram",
+    "termsOfService": "服务条款",
+    "termsOfServiceDescription": "阅读我们的服务条款和用户协议",
+    "title": "关于理财助手",
+    "version": "版本",
+    "website": "官方网站"
+  },
+  "backup": {
+    "actions": {
+      "export": {
+        "description": "下载各种格式的数据",
+        "title": "导出数据"
+      },
+      "manualBackup": {
+        "description": "立即创建数据备份",
+        "title": "手动备份"
+      },
+      "restore": {
+        "description": "从最新备份恢复数据",
+        "title": "恢复数据"
+      }
+    },
+    "export": {
+      "message": "选择导出数据的格式：",
+      "title": "导出数据"
+    },
+    "info": {
+      "description": "自动备份每晚2:00进行。您的数据通过高级加密保护。"
+    },
+    "manualBackup": {
+      "message": "您要备份您的数据吗？",
+      "successMessage": "备份成功完成。",
+      "title": "手动备份"
+    },
+    "operations": {
+      "title": "备份操作"
+    },
+    "options": {
+      "autoBackup": {
+        "description": "每日自动备份数据",
+        "title": "自动备份"
+      },
+      "cloudSync": {
+        "description": "在云端存储数据",
+        "title": "云同步"
+      }
+    },
+    "restore": {
+      "message": "您要从最新备份恢复数据吗？此操作将替换当前数据。",
+      "successMessage": "数据恢复成功。",
+      "title": "恢复数据"
+    },
+    "settings": {
+      "title": "备份设置"
+    },
+    "status": {
+      "lastBackup": "最后备份",
+      "secure": "您的数据是安全的",
+      "title": "备份状态"
+    },
+    "storage": {
+      "mb": "兆字节",
+      "remaining": "剩余",
+      "title": "存储空间",
+      "used": "已使用"
+    },
+    "title": "备份与同步"
+  },
+  "common": {
+    "cancel": "取消",
+    "currency": "VND",
+    "email": "邮箱",
+    "error": "错误",
+    "login": "登录",
+    "password": "密码",
+    "register": "注册",
+    "start": "开始",
+    "success": "成功"
+  },
+  "dashboard": {
+    "addPayment": "添加支付",
+    "beverage": "饮品",
+    "cafe": "咖啡厅",
+    "month": "本月",
+    "paymentDisplay": "支付记录",
+    "shopping": "购物",
+    "store": "商店",
+    "taxi": "出租车",
+    "today": "今天",
+    "todayDate": "今天 2024年3月14日",
+    "transport": "交通",
+    "week": "本周"
+  },
+  "en-US": "英语（美国）",
+  "help": {
+    "contact": {
+      "email": {
+        "title": "邮件支持"
+      },
+      "phone": {
+        "title": "电话联系"
+      },
+      "telegram": {
+        "title": "Telegram"
+      },
+      "website": {
+        "title": "网站"
+      }
+    },
+    "contactDescription": "如需更多帮助，请通过以下方式与我们联系",
+    "contactSupport": "联系支持",
+    "faq": {
+      "addExpense": {
+        "answer": "点击主页面的加号按钮，选择费用类型，输入金额和描述，然后保存。",
+        "question": "如何添加新费用？"
+      },
+      "backup": {
+        "answer": "在设置页面中启用云同步功能来自动备份您的数据。",
+        "question": "如何备份我的数据？"
+      },
+      "changePassword": {
+        "answer": "前往设置 > 安全 > 修改密码，输入当前密码和新密码，然后确认更改。",
+        "question": "如何修改密码？"
+      },
+      "createCategory": {
+        "answer": "在支出录入界面，点击分类字段，然后点击\"添加新分类\"来创建自定义分类。",
+        "question": "如何创建新的支出分类？"
+      },
+      "monthlyReport": {
+        "answer": "月度报告会自动生成，可在统计页面查看。您也可以将其导出为PDF格式。",
+        "question": "如何查看月度报告？"
+      },
+      "notifications": {
+        "answer": "您可以在设置中管理通知偏好。",
+        "question": "如何管理通知？"
+      },
+      "title": "常见问题"
+    },
+    "quickAccess": "快速访问",
+    "quickActions": {
+      "gettingStarted": {
+        "description": "逐步学习如何使用应用",
+        "title": "入门指南"
+      },
+      "reportBug": {
+        "description": "报告错误或技术问题",
+        "title": "报告问题"
+      },
+      "suggestFeature": {
+        "description": "发送改进应用的想法",
+        "title": "建议功能"
+      },
+      "tutorials": {
+        "description": "观看教学视频",
+        "title": "教学视频"
+      }
+    },
+    "searchPlaceholder": "在帮助中搜索...",
+    "support247": {
+      "description": "我们的支持团队随时准备回答您的问题。",
+      "title": "24/7支持"
+    },
+    "title": "帮助与支持"
+  },
+  "login": {
+    "appDescription": "跟踪您的支出并管理您的财务",
+    "appName": "FinMind",
+    "appSubtitle": "智能财务管理",
+    "checkNetwork": "请检查网络连接",
+    "forgotPassword": "忘记密码？",
+    "invalidEmail": "请输入有效的邮箱地址",
+    "loggingIn": "登录中...",
+    "loginFailed": "登录失败",
+    "loginSuccess": "登录成功",
+    "noAccount": "没有账户？",
+    "or": "或",
+    "passwordTooShort": "密码至少需要6个字符",
+    "rememberMe": "记住我",
+    "subtitle": "请登录以继续",
+    "welcome": "欢迎"
+  },
+  "notifications": {
+    "general": {
+      "bill_reminders": {
+        "description": "获取即将到期的账单提醒",
+        "title": "账单提醒"
+      },
+      "budget_alerts": {
+        "description": "接近预算限制时提醒",
+        "title": "预算警报"
+      },
+      "description": "管理您的通知偏好",
+      "goal_updates": {
+        "description": "您的财务目标更新",
+        "title": "目标更新"
+      },
+      "promotions": {
+        "description": "特别优惠和促销活动",
+        "title": "促销活动"
+      },
+      "push_notifications": {
+        "description": "接收重要更新",
+        "title": "推送通知"
+      },
+      "security_alerts": {
+        "description": "重要安全通知",
+        "title": "安全警报"
+      },
+      "title": "常规"
+    },
+    "timing": {
+      "dailyReport": "日报告",
+      "monthly_reports": {
+        "description": "每月财务摘要",
+        "title": "月报告"
+      },
+      "sunday": "星期日",
+      "title": "时间设置",
+      "weeklyReport": "周报告",
+      "weekly_reports": {
+        "description": "每周财务摘要",
+        "title": "周报告"
+      }
+    },
+    "title": "通知设置"
+  },
+  "onboarding": {
+    "next": "下一步",
+    "reports": {
+      "description": "通过精确的图表检查您的财务状况",
+      "subtitle": "完整的图表和统计",
+      "title": "报告"
+    },
+    "skip": "跳过",
+    "start": "开始使用",
+    "transactions": {
+      "description": "轻松记录您的所有交易",
+      "subtitle": "快速记录收入和支出",
+      "title": "记录交易"
+    },
+    "welcome": {
+      "description": "轻松智能地管理您的财务",
+      "subtitle": "财务管理应用",
+      "title": "欢迎"
+    }
+  },
+  "register": {
+    "agreeTerms": "请同意服务条款",
+    "agreeWith": "我同意",
+    "alreadyHaveAccount": "已有账户？",
+    "and": "和",
+    "checkNetwork": "请检查网络连接",
+    "confirmPasswordPlaceholder": "确认密码",
+    "fullNamePlaceholder": "姓名",
+    "invalidEmail": "请输入有效的邮箱地址",
+    "or": "或",
+    "passwordMismatch": "密码不匹配",
+    "passwordTooShort": "密码至少需要6个字符",
+    "privacyPolicy": "隐私政策",
+    "registerFailed": "注册失败",
+    "registerSuccess": "注册成功",
+    "registering": "注册中...",
+    "subtitle": "加入我们开始管理您的财务",
+    "termsAndConditions": "服务条款",
+    "title": "创建账户"
+  },
+  "security": {
+    "accountManagement": "账户管理",
+    "autoLock": "自动锁定",
+    "autoLockDescription": "设置应用自动锁定时间",
+    "biometricLogin": "生物识别登录",
+    "biometricLoginDescription": "使用指纹或面部识别登录",
+    "changePassword": "修改密码",
+    "changePasswordAccountDescription": "更新您的账户密码",
+    "changePasswordDescription": "定期更改密码以保护账户安全",
+    "connectedDevices": "已连接设备",
+    "connectedDevicesDescription": "管理已连接的设备",
+    "continue": "继续",
+    "delete": "删除",
+    "deleteAccount": "删除账户",
+    "deleteAccountConfirmation": "确定要删除账户吗？此操作不可撤销。",
+    "deleteAccountDescription": "永久删除您的账户和所有数据",
+    "loginHistory": "登录历史",
+    "loginHistoryDescription": "查看最近的登录记录",
+    "loginNotifications": "登录通知",
+    "loginNotificationsDescription": "当有新设备登录时接收通知",
+    "pinCode": "PIN码",
+    "pinCodeDescription": "设置PIN码以快速访问应用",
+    "securitySettings": "安全设置",
+    "securitySettingsDescription": "管理您的账户安全选项",
+    "securityTip": "安全提示",
+    "title": "安全与隐私",
+    "twoFactorAuth": "双重验证",
+    "twoFactorAuthDescription": "为您的账户添加额外的安全层"
+  },
+  "settings": {
+    "aboutApp": "关于应用",
+    "account": "账户",
+    "autoBackup": "自动备份",
+    "backupManagement": "备份管理",
+    "backupSettings": "备份设置",
+    "backupSync": "备份同步",
+    "bankAccounts": "银行账户",
+    "biometricAuth": "生物识别认证",
+    "cancel": "取消",
+    "contactSupport": "联系支持",
+    "copyright": "© 2024 理财助手。保留所有权利。",
+    "currency": "货币",
+    "darkMode": "深色模式",
+    "editPersonalInfo": "编辑个人信息",
+    "enableDarkTheme": "启用深色主题",
+    "fingerprintLogin": "指纹登录",
+    "general": "通用",
+    "help": "帮助",
+    "howToUseApp": "如何使用应用",
+    "language": "语言",
+    "logout": "退出登录",
+    "logoutConfirmation": "确定要退出登录吗？",
+    "manageBankAccounts": "管理银行账户",
+    "notifications": "通知",
+    "personalProfile": "个人资料",
+    "rateApp": "评价应用",
+    "receiveImportantNotifications": "接收重要通知",
+    "saveToCloud": "保存到云端",
+    "security": "安全",
+    "securitySettings": "安全设置",
+    "sendMessageToSupport": "发送消息给支持团队",
+    "support": "支持",
+    "title": "设置",
+    "usd": "美元",
+    "userEmail": "用户邮箱",
+    "userName": "用户名",
+    "version": "版本 1.0.0",
+    "yourOpinionMatters": "您的意见很重要"
+  },
+  "statistics": {
+    "balance": "余额",
+    "categories": {
+      "entertainment": "娱乐",
+      "food": "餐饮",
+      "shopping": "购物",
+      "transport": "交通"
+    },
+    "expense": "支出",
+    "expenseCategories": "支出分类",
+    "income": "收入",
+    "monthlyChart": "月度图表",
+    "months": {
+      "april": "四月",
+      "june": "六月",
+      "march": "三月",
+      "may": "五月"
+    },
+    "thisMonthSummary": "本月概览",
+    "title": "财务统计"
+  },
+  "tabBar": {
+    "home": "首页",
+    "settings": "设置",
+    "statistics": "统计",
+    "transactions": "交易"
+  },
+  "welcome": {
+    "getStarted": "开始使用",
+    "next": "下一步",
+    "skip": "跳过",
+    "intro": {
+      "title": "欢迎来到FinMind",
+      "haveAccount": "我有账户",
+      "createAccount": "创建新账户"
+    },
+    "step1": {
+      "description": "使用FinMind轻松管理您的财务，实现储蓄目标。",
+      "subtitle": "智能个人财务管理",
+      "title": "欢迎来到FinMind"
+    },
+    "step2": {
+      "description": "对所有支出进行分类，了解您的钱花在哪里。",
+      "subtitle": "完全控制您的开支",
+      "title": "支出追踪"
+    },
+    "step3": {
+      "description": "通过图表和详细报告，了解您的财务模式。",
+      "subtitle": "深入了解财务状况",
+      "title": "分析与报告"
+    },
+    "step4": {
+      "description": "设定储蓄目标并跟踪您的进度。",
+      "subtitle": "为未来规划",
+      "title": "智能目标设定"
+    }
+  },
+  "window": "Window",
+  "addBill": {
+    "title": "添加账单",
+    "amount": "金额",
+    "amountPlaceholder": "请输入金额",
+    "description": "描述",
+    "descriptionPlaceholder": "请输入描述",
+    "category": "分类",
+    "selectCategory": "选择分类",
+    "tags": "标签",
+    "addTag": "添加标签",
+    "customTag": "自定义标签",
+    "enterTag": "请输入标签名称",
+    "date": "日期",
+    "time": "时间",
+    "dateTime": "日期时间",
+    "selectDate": "选择日期",
+    "selectTime": "选择时间",
+    "selectDateTime": "选择日期时间",
+    "details": "详细信息",
+    "save": "保存",
+    "cancel": "取消",
+    "expense": "支出",
+    "income": "收入",
+    "type": "类型",
+    "required": "此字段为必填项",
+    "invalidAmount": "请输入有效金额",
+    "success": "账单添加成功",
+    "error": "添加账单失败"
+  }
+}

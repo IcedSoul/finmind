@@ -6,7 +6,9 @@ import { initDatabase } from './services/database';
 import { loadPersistedAuth } from './utils/authPersistence';
 import { useAuthStore } from './store/authStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { decode } from 'react-native-base64';
+import { decode } from 'base-64';
+import { ThemeProvider } from './contexts/ThemeContext';
+import './i18n';
 
 const App: React.FC = () => {
   const { logout } = useAuthStore();
@@ -49,13 +51,15 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <NavigationContainer>
-      <StatusBar
-        barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'}
-        backgroundColor="#FFFFFF"
-      />
-      <Navigation />
-    </NavigationContainer>
+    <ThemeProvider>
+      <NavigationContainer>
+        <StatusBar
+          barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'}
+          backgroundColor="#FFFFFF"
+        />
+        <Navigation />
+      </NavigationContainer>
+    </ThemeProvider>
   );
 };
 

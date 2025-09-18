@@ -2,20 +2,23 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
+  SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useForm } from '@/hooks';
 import { validateEmail, validatePassword } from '@/utils';
 import { useAuthStore } from '@/store';
 import { apiService } from '@/services/api';
+import { useTranslation } from 'react-i18next';
+import { CustomTextInput } from '@/components';
+
+const { height } = Dimensions.get('window');
 
 interface LoginForm {
   email: string;
@@ -27,6 +30,7 @@ const LoginScreen = () => {
   const { setCredentials } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { t } = useTranslation();
 
   const { values, errors, touched, handleChange, handleBlur, validate } =
     useForm<LoginForm>({
@@ -40,12 +44,12 @@ const LoginScreen = () => {
     }
 
     if (!validateEmail(values.email)) {
-      Alert.alert('错误', '请输入有效的邮箱地址');
+      Alert.alert(t('common.error'), t('login.invalidEmail'));
       return;
     }
 
     if (!validatePassword(values.password)) {
-      Alert.alert('错误', '密码长度至少6位');
+      Alert.alert(t('common.error'), t('login.passwordTooShort'));
       return;
     }
 
@@ -61,9 +65,9 @@ const LoginScreen = () => {
         result.access_token,
         result.refresh_token,
       );
-      Alert.alert('成功', '登录成功');
+      Alert.alert(t('common.success'), t('login.loginSuccess'));
     } catch (loginError: any) {
-      Alert.alert('登录失败', loginError.message || '请检查网络连接');
+      Alert.alert(t('login.loginFailed'), loginError.message || t('login.checkNetwork'));
     } finally {
       setIsLoading(false);
     }
@@ -74,105 +78,114 @@ const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>FinMind</Text>
-          <Text style={styles.subtitle}>全记账</Text>
-          <Text style={styles.description}>智能记账，轻松理财</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.profileContainer}>
+          <View style={styles.profileCircle}>
+            <Icon name="user" size={32} color="#FFFFFF" />
+          </View>
         </View>
+        <Text style={styles.title}>{t('login.appName')}</Text>
+      </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Icon
-              name="mail"
-              size={20}
-              color="#8E8E93"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={[
-                styles.input,
-                touched.email && errors.email ? styles.inputError : null,
-              ]}
-              placeholder="邮箱地址"
-              placeholderTextColor="#C7C7CC"
-              value={values.email}
-              onChangeText={text => handleChange('email', text)}
-              onBlur={() => handleBlur('email')}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-          {touched.email && errors.email && (
-            <Text style={styles.errorText}>{errors.email}</Text>
-          )}
+      <View style={styles.form}>
+        <CustomTextInput
+          leftIcon="mail"
+          placeholder={t('common.email')}
+          value={values.email}
+          onChangeText={text => handleChange('email', text)}
+          onBlur={() => handleBlur('email')}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          containerStyle={[
+            touched.email && errors.email ? styles.inputError : null,
+          ]}
+        />
+        {touched.email && errors.email && (
+          <Text style={styles.errorText}>{errors.email}</Text>
+        )}
 
-          <View style={styles.inputContainer}>
-            <Icon
-              name="lock"
-              size={20}
-              color="#8E8E93"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={[
-                styles.input,
-                touched.password && errors.password ? styles.inputError : null,
-              ]}
-              placeholder="密码"
-              placeholderTextColor="#C7C7CC"
-              value={values.password}
-              onChangeText={text => handleChange('password', text)}
-              onBlur={() => handleBlur('password')}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Icon
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={20}
-                color="#8E8E93"
-              />
-            </TouchableOpacity>
-          </View>
-          {touched.password && errors.password && (
-            <Text style={styles.errorText}>{errors.password}</Text>
-          )}
+        <CustomTextInput
+          leftIcon="lock"
+          rightIcon={showPassword ? 'eye-off' : 'eye'}
+          onRightIconPress={() => setShowPassword(!showPassword)}
+          placeholder={t('common.password')}
+          value={values.password}
+          onChangeText={text => handleChange('password', text)}
+          onBlur={() => handleBlur('password')}
+          secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          autoCorrect={false}
+          containerStyle={[
+            touched.password && errors.password ? styles.inputError : null,
+          ]}
+        />
+        {touched.password && errors.password && (
+          <Text style={styles.errorText}>{errors.password}</Text>
+        )}
 
-          <TouchableOpacity
-            style={[
-              styles.loginButton,
-              isLoading && styles.loginButtonDisabled,
-            ]}
-            onPress={handleLogin}
-            disabled={isLoading}
+        <TouchableOpacity
+          style={[isLoading && styles.loginButtonDisabled]}
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          <LinearGradient
+            colors={isLoading ? ['#C7C7CC', '#C7C7CC'] : ['#B990F8', '#9B94F3']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.loginButton}
           >
             <Text style={styles.loginButtonText}>
-              {isLoading ? '登录中...' : '登录'}
+              {isLoading ? t('login.loggingIn') : t('common.login')}
             </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <View style={styles.dividerContainer}>
+          <View style={styles.divider} />
+          <Text style={styles.dividerText}>{t('login.or')}</Text>
+          <View style={styles.divider} />
+        </View>
+
+        <View style={styles.socialContainer}>
+          <TouchableOpacity
+            style={styles.socialButton}
+            onPress={() => console.log('Google login')}
+          >
+            <Icon name="chrome" size={20} color="#DB4437" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.socialButton}
+            onPress={() => console.log('Apple login')}
+          >
+            <Icon name="smartphone" size={20} color="#000000" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.socialButton}
+            onPress={() => console.log('Facebook login')}
+          >
+            <Icon name="facebook" size={20} color="#4267B2" />
           </TouchableOpacity>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>还没有账号？</Text>
-            <TouchableOpacity onPress={navigateToRegister}>
-              <Text style={styles.linkText}>立即注册</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.socialButton}
+            onPress={() => console.log('Fingerprint login')}
+          >
+            <Icon name="lock" size={20} color="#6C5CE7" />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>{t('login.noAccount')}</Text>
+        <TouchableOpacity onPress={navigateToRegister}>
+          <Text style={styles.linkText}>{t('common.register')}</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -180,101 +193,112 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
+    height: height,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48,
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+  },
+  profileContainer: {
+    marginBottom: 24,
+  },
+  profileCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#6C5CE7',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '600',
-    color: '#1C1C1E',
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 14,
-    color: '#8E8E93',
+    color: '#2D3436',
     textAlign: 'center',
   },
   form: {
-    width: '100%',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F7',
-    borderRadius: 12,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    height: 50,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
     flex: 1,
-    fontSize: 16,
-    color: '#1C1C1E',
-    height: '100%',
-    paddingVertical: 0,
+    paddingHorizontal: 24,
     justifyContent: 'center',
-    textAlignVertical: 'center',
   },
   inputError: {
     borderWidth: 1,
     borderColor: '#FF3B30',
   },
-  eyeIcon: {
-    padding: 4,
-  },
   errorText: {
     color: '#FF3B30',
-    fontSize: 14,
+    fontSize: 12,
+    marginTop: 4,
     marginBottom: 16,
     marginLeft: 4,
   },
   loginButton: {
-    backgroundColor: '#007AFF',
     borderRadius: 12,
-    height: 50,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 24,
   },
   loginButtonDisabled: {
-    backgroundColor: '#C7C7CC',
+    opacity: 0.6,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E9ECEF',
+  },
+  dividerText: {
+    fontSize: 14,
+    color: '#636E72',
+    marginHorizontal: 16,
+  },
+  socialContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  socialButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
   },
   loginButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontFamily: 'Shabnam',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingBottom: 40,
+    paddingHorizontal: 24,
   },
   footerText: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontSize: 16,
+    color: '#636E72',
     marginRight: 4,
   },
   linkText: {
-    fontSize: 14,
-    color: '#007AFF',
-    fontWeight: '500',
+    fontSize: 16,
+    color: '#6C5CE7',
+    fontWeight: '700',
+    fontFamily: 'Shabnam',
   },
 });
 

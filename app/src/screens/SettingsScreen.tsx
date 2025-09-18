@@ -7,468 +7,497 @@ import {
   ScrollView,
   Switch,
   Alert,
-  Modal,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import { storage } from '@/utils';
-import { useSyncStatus } from '@/hooks';
-import { useAuthStore, useBillsStore } from '@/store';
+import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useAuthStore } from '@/store/authStore';
 
-const SettingItem = ({
-  icon,
-  title,
-  subtitle,
-  onPress,
-  showArrow = true,
-  rightComponent,
-}: {
-  icon: string;
-  title: string;
-  subtitle?: string;
-  onPress?: () => void;
-  showArrow?: boolean;
-  rightComponent?: React.ReactNode;
-}) => (
-  <TouchableOpacity
-    style={styles.settingItem}
-    onPress={onPress}
-    disabled={!onPress}
-  >
-    <View style={styles.settingLeft}>
-      <View style={styles.settingIcon}>
-        <Icon name={icon} size={20} color="#007AFF" />
-      </View>
-      <View style={styles.settingText}>
-        <Text style={styles.settingTitle}>{title}</Text>
-        {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
-      </View>
-    </View>
-    <View style={styles.settingRight}>
-      {rightComponent}
-      {showArrow && onPress && (
-        <Icon name="chevron-right" size={16} color="#C7C7CC" />
-      )}
-    </View>
-  </TouchableOpacity>
-);
-
-const SettingSection = ({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) => (
-  <View style={styles.settingSection}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    <View style={styles.sectionContent}>{children}</View>
-  </View>
-);
-
-const SettingsScreen = () => {
+const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { user, logout: logoutAction } = useAuthStore();
-  const { bills } = useBillsStore();
-  const { isSyncing, pendingChanges, startSync } = useSyncStatus();
-
+  const { t, i18n } = useTranslation();
+  const { theme, themeMode, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
-  const [autoSync, setAutoSync] = useState(true);
   const [biometric, setBiometric] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showClearDataModal, setShowClearDataModal] = useState(false);
+  const [autoBackup, setAutoBackup] = useState(true);
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
+
+  const isDarkMode = themeMode === 'dark';
+  const styles = createStyles(theme);
+
+  const handleLanguageChange = async () => {
+    const newLanguage = currentLanguage === 'en' ? 'zh' : 'en';
+    await i18n.changeLanguage(newLanguage);
+    await AsyncStorage.setItem('language', newLanguage);
+    setCurrentLanguage(newLanguage);
+  };
+
+  const getLanguageDisplayName = () => {
+    return currentLanguage === 'zh' ? '中文' : 'English';
+  };
+
+  const settingsData = [
+    {
+      title: t('settings.account'),
+      items: [
+        {
+          icon: 'user',
+          title: t('settings.personalProfile'),
+          subtitle: t('settings.editPersonalInfo'),
+          onPress: () => navigation.navigate('Profile'),
+        },
+        {
+          icon: 'credit-card',
+          title: t('settings.bankAccounts'),
+          subtitle: t('settings.manageBankAccounts'),
+          onPress: () => {},
+        },
+        {
+          icon: 'shield',
+          title: t('settings.security'),
+          subtitle: t('settings.securitySettings'),
+          onPress: () => navigation.navigate('Security'),
+        },
+      ],
+    },
+    {
+      title: t('settings.general'),
+      items: [
+        {
+          icon: 'bell',
+          title: t('settings.notifications'),
+          subtitle: t('settings.receiveImportantNotifications'),
+          onPress: () => navigation.navigate('Notifications'),
+        },
+        {
+          icon: 'moon',
+          title: t('settings.darkMode'),
+          subtitle: t('settings.enableDarkTheme'),
+          onPress: toggleTheme,
+          showSwitch: true,
+          switchValue: isDarkMode,
+        },
+        {
+          icon: 'lock',
+          title: t('settings.biometricAuth'),
+          subtitle: t('settings.fingerprintLogin'),
+          onPress: () => setBiometric(!biometric),
+          showSwitch: true,
+          switchValue: biometric,
+        },
+        {
+          icon: 'globe',
+          title: t('settings.language'),
+          subtitle: getLanguageDisplayName(),
+          onPress: handleLanguageChange,
+        },
+        {
+          icon: 'dollar-sign',
+          title: t('settings.currency'),
+          subtitle: t('settings.usd'),
+          onPress: () => {},
+        },
+      ],
+    },
+    {
+      title: t('settings.backupSync'),
+      items: [
+        {
+          icon: 'cloud',
+          title: t('settings.autoBackup'),
+          subtitle: t('settings.saveToCloud'),
+          onPress: () => setAutoBackup(!autoBackup),
+          showSwitch: true,
+          switchValue: autoBackup,
+        },
+        {
+          icon: 'database',
+          title: t('settings.backupManagement'),
+          subtitle: t('settings.backupSettings'),
+          onPress: () => navigation.navigate('Backup'),
+        },
+      ],
+    },
+    {
+      title: t('settings.support'),
+      items: [
+        {
+          icon: 'help-circle',
+          title: t('settings.help'),
+          subtitle: t('settings.howToUseApp'),
+          onPress: () => navigation.navigate('Help'),
+        },
+        {
+          icon: 'message-circle',
+          title: t('settings.contactSupport'),
+          subtitle: t('settings.sendMessageToSupport'),
+          onPress: () => {},
+        },
+        {
+          icon: 'star',
+          title: t('settings.rateApp'),
+          subtitle: t('settings.yourOpinionMatters'),
+          onPress: () => {},
+        },
+        {
+          icon: 'info',
+          title: t('settings.aboutApp'),
+          subtitle: t('settings.version'),
+          onPress: () => navigation.navigate('About'),
+        },
+      ],
+    },
+  ];
 
   const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
-
-  const confirmLogout = () => {
-    logoutAction();
-    setShowLogoutModal(false);
-  };
-
-  const handleClearData = () => {
-    setShowClearDataModal(true);
-  };
-
-  const confirmClearData = async () => {
-    try {
-      // 清除本地数据
-      await storage.clear();
-      // 这里应该调用清除账单数据的 action
-      // dispatch(clearBills());
-      Alert.alert('成功', '本地数据已清除');
-    } catch (error) {
-      Alert.alert('错误', '清除数据失败');
-    }
-    setShowClearDataModal(false);
-  };
-
-  const handleExportData = () => {
-    // 这里应该实现数据导出功能
-    Alert.alert('提示', '数据导出功能开发中');
-  };
-
-  const handleImportData = () => {
-    navigation.navigate('Import' as never);
-  };
-
-  const handleAbout = () => {
     Alert.alert(
-      'FinMind 全记账',
-      'Version 1.0.0\n\n一款智能的个人记账应用，支持AI识别、数据同步等功能。\n\n© 2024 FinMind Team',
-      [{ text: '确定' }],
+      t('settings.logout'),
+      t('settings.logoutConfirmation'),
+      [
+        {
+          text: t('settings.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('settings.logout'),
+          style: 'destructive',
+          onPress: () => {
+            useAuthStore.getState().logout();
+          },
+        },
+      ]
+    );
+  };
+
+  const renderSettingItem = (item: any) => {
+    return (
+      <TouchableOpacity
+        key={item.title}
+        style={styles.settingItem}
+        onPress={item.onPress}
+        activeOpacity={0.7}
+      >
+        <View style={styles.settingLeft}>
+          <View style={styles.iconContainer}>
+            <Icon name={item.icon} size={20} color="#6C5CE7" />
+          </View>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingTitle}>{item.title}</Text>
+            <Text style={styles.settingSubtitle}>{item.subtitle}</Text>
+          </View>
+        </View>
+        <View style={styles.settingRight}>
+          {item.showSwitch && (
+            <Switch
+              value={item.switchValue}
+              onValueChange={item.onPress}
+              trackColor={{ false: '#E9ECEF', true: '#6C5CE7' }}
+              thumbColor={item.switchValue ? '#FFFFFF' : '#FFFFFF'}
+            />
+          )}
+        </View>
+      </TouchableOpacity>
     );
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>设置</Text>
-      </View>
+      <StatusBar barStyle="light-content" backgroundColor="#6C5CE7" />
+      
+      <LinearGradient
+        colors={['#6C5CE7', '#A29BFE']}
+        style={styles.headerGradient}
+      >
+        <View style={styles.profileSection}>
+          <View style={styles.profileAvatar}>
+            <Icon name="user" size={32} color="#FFFFFF" />
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{t('settings.userName')}</Text>
+            <Text style={styles.profileEmail}>{t('settings.userEmail')}</Text>
+          </View>
+        </View>
+      </LinearGradient>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <SettingSection title="用户信息">
-          <SettingItem
-            icon="user"
-            title={user?.name || '未登录'}
-            subtitle={user?.email}
-            onPress={() => navigation.navigate('Profile' as never)}
-          />
-        </SettingSection>
+        <View style={styles.quickMenuContainer}>
+          <View style={styles.quickMenuRow}>
+            <TouchableOpacity style={styles.quickMenuItem} onPress={() => navigation.navigate('Profile')}>
+              <View style={styles.quickMenuIcon}>
+                <Icon name="user" size={20} color="#6C5CE7" />
+              </View>
+              <Text style={styles.quickMenuText}>{t('settings.personalProfile')}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.quickMenuItem} onPress={() => navigation.navigate('BankAccounts')}>
+              <View style={styles.quickMenuIcon}>
+                <Icon name="credit-card" size={20} color="#6C5CE7" />
+              </View>
+              <Text style={styles.quickMenuText}>{t('settings.bankAccounts')}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.quickMenuItem} onPress={() => navigation.navigate('Security')}>
+              <View style={styles.quickMenuIcon}>
+                <Icon name="shield" size={20} color="#6C5CE7" />
+              </View>
+              <Text style={styles.quickMenuText}>{t('settings.security')}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.quickMenuItem} onPress={() => navigation.navigate('Notifications')}>
+              <View style={styles.quickMenuIcon}>
+                <Icon name="bell" size={20} color="#6C5CE7" />
+              </View>
+              <Text style={styles.quickMenuText}>{t('settings.notifications')}</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.quickMenuRow}>
+            <TouchableOpacity style={styles.quickMenuItem} onPress={() => navigation.navigate('Language')}>
+              <View style={styles.quickMenuIcon}>
+                <Icon name="globe" size={20} color="#6C5CE7" />
+              </View>
+              <Text style={styles.quickMenuText}>{t('settings.language')}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.quickMenuItem} onPress={() => navigation.navigate('Currency')}>
+              <View style={styles.quickMenuIcon}>
+                <Icon name="dollar-sign" size={20} color="#6C5CE7" />
+              </View>
+              <Text style={styles.quickMenuText}>{t('settings.currency')}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.quickMenuItem} onPress={() => navigation.navigate('Backup')}>
+              <View style={styles.quickMenuIcon}>
+                <Icon name="cloud" size={20} color="#6C5CE7" />
+              </View>
+              <Text style={styles.quickMenuText}>{t('backup.title')}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.quickMenuItem} onPress={() => navigation.navigate('Help')}>
+              <View style={styles.quickMenuIcon}>
+                <Icon name="help-circle" size={20} color="#6C5CE7" />
+              </View>
+              <Text style={styles.quickMenuText}>{t('settings.help')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        {settingsData.map((section, sectionIndex) => (
+          <View key={sectionIndex} style={styles.section}>
+            <View style={styles.sectionContent}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+              {section.items.map((item, itemIndex) => (
+                <View key={itemIndex}>
+                  <View style={styles.separator} />
+                  {renderSettingItem(item)}
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
 
-        <SettingSection title="数据同步">
-          <SettingItem
-            icon="cloud"
-            title="同步状态"
-            subtitle={`${pendingChanges} 条记录待同步`}
-            onPress={startSync}
-            rightComponent={
-              isSyncing ? (
-                <Text style={styles.syncingText}>同步中...</Text>
-              ) : (
-                <Text style={styles.syncText}>立即同步</Text>
-              )
-            }
-          />
-          <SettingItem
-            icon="refresh-cw"
-            title="自动同步"
-            subtitle="连接WiFi时自动同步数据"
-            showArrow={false}
-            rightComponent={
-              <Switch
-                value={autoSync}
-                onValueChange={setAutoSync}
-                trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
-                thumbColor="#FFFFFF"
-              />
-            }
-          />
-        </SettingSection>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Icon name="log-out" size={20} color="#E17055" />
+          <Text style={styles.logoutText}>{t('settings.logout')}</Text>
+        </TouchableOpacity>
 
-        <SettingSection title="应用设置">
-          <SettingItem
-            icon="bell"
-            title="推送通知"
-            subtitle="接收账单提醒和同步通知"
-            showArrow={false}
-            rightComponent={
-              <Switch
-                value={notifications}
-                onValueChange={setNotifications}
-                trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
-                thumbColor="#FFFFFF"
-              />
-            }
-          />
-          <SettingItem
-            icon="shield"
-            title="生物识别"
-            subtitle="使用指纹或面容ID解锁"
-            showArrow={false}
-            rightComponent={
-              <Switch
-                value={biometric}
-                onValueChange={setBiometric}
-                trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
-                thumbColor="#FFFFFF"
-              />
-            }
-          />
-        </SettingSection>
-
-        <SettingSection title="数据管理">
-          <SettingItem
-            icon="download"
-            title="导入数据"
-            subtitle="从文件导入账单数据"
-            onPress={handleImportData}
-          />
-          <SettingItem
-            icon="upload"
-            title="导出数据"
-            subtitle="导出账单数据到文件"
-            onPress={handleExportData}
-          />
-          <SettingItem
-            icon="trash-2"
-            title="清除本地数据"
-            subtitle={`当前有 ${bills?.length || 0} 条记录`}
-            onPress={handleClearData}
-          />
-        </SettingSection>
-
-        <SettingSection title="其他">
-          <SettingItem
-            icon="help-circle"
-            title="帮助与反馈"
-            onPress={() => Alert.alert('提示', '帮助功能开发中')}
-          />
-          <SettingItem icon="info" title="关于应用" onPress={handleAbout} />
-        </SettingSection>
-
-        <View style={styles.logoutSection}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Icon name="log-out" size={20} color="#FF3B30" />
-            <Text style={styles.logoutText}>退出登录</Text>
-          </TouchableOpacity>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>{t('settings.version')}</Text>
+          <Text style={styles.footerText}>{t('settings.copyright')}</Text>
         </View>
       </ScrollView>
-
-      <Modal
-        visible={showLogoutModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowLogoutModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>退出登录</Text>
-            <Text style={styles.modalMessage}>
-              确定要退出登录吗？未同步的数据可能会丢失。
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowLogoutModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>取消</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={confirmLogout}
-              >
-                <Text style={styles.confirmButtonText}>退出</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={showClearDataModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowClearDataModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>清除本地数据</Text>
-            <Text style={styles.modalMessage}>
-              此操作将删除所有本地账单数据，且无法恢复。确定继续吗？
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowClearDataModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>取消</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.dangerButton]}
-                onPress={confirmClearData}
-              >
-                <Text style={styles.dangerButtonText}>清除</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: theme.colors.background,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
+  headerGradient: {
+    paddingTop: 50,
     paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    paddingHorizontal: 20,
   },
-  headerTitle: {
-    fontSize: 24,
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  profileAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#1C1C1E',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  profileEmail: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   content: {
     flex: 1,
+    paddingHorizontal: 20,
   },
-  settingSection: {
-    marginTop: 20,
+  section: {
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#8E8E93',
-    marginBottom: 8,
-    marginHorizontal: 20,
-    textTransform: 'uppercase',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    opacity: 0.8,
   },
   sectionContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#E5E5EA',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   settingItem: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  settingIcon: {
+  iconContainer: {
     width: 32,
     height: 32,
-    borderRadius: 8,
-    backgroundColor: '#F2F2F7',
+    borderRadius: 16,
+    backgroundColor: theme.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
-  settingText: {
+  settingInfo: {
     flex: 1,
+    alignItems: 'flex-start',
   },
   settingTitle: {
-    fontSize: 16,
-    color: '#1C1C1E',
+    fontSize: 14,
     fontWeight: '500',
+    color: theme.colors.text,
+    marginBottom: 2,
+    textAlign: 'left',
   },
   settingSubtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginTop: 2,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    textAlign: 'left',
   },
   settingRight: {
-    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  syncText: {
-    fontSize: 14,
-    color: '#007AFF',
-    marginRight: 8,
-  },
-  syncingText: {
-    fontSize: 14,
-    color: '#FF9500',
-    marginRight: 8,
-  },
-  logoutSection: {
-    margin: 20,
+  separator: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginLeft: 54,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
+    backgroundColor: theme.colors.surface,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FF3B30',
+    paddingVertical: 12,
+    marginVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   logoutText: {
-    fontSize: 16,
-    color: '#FF3B30',
-    fontWeight: '500',
-    marginLeft: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    margin: 20,
-    minWidth: 280,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  modalMessage: {
     fontSize: 14,
-    color: '#8E8E93',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
+    fontWeight: '500',
+    color: '#E17055',
+    marginLeft: 6,
   },
-  modalButtons: {
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  footerText: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    marginBottom: 2,
+  },
+  quickMenuContainer: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    marginTop: 16,
+    marginBottom: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  quickMenuRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
-  modalButton: {
+  quickMenuItem: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
     alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 6,
+    marginHorizontal: 2,
   },
-  cancelButton: {
-    backgroundColor: '#F2F2F7',
-    marginRight: 8,
+  quickMenuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(108, 92, 231, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  confirmButton: {
-    backgroundColor: '#007AFF',
-    marginLeft: 8,
-  },
-  dangerButton: {
-    backgroundColor: '#FF3B30',
-    marginLeft: 8,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#1C1C1E',
+  quickMenuText: {
+    fontSize: 12,
     fontWeight: '500',
-  },
-  confirmButtonText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '500',
-  },
-  dangerButtonText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '500',
+    color: theme.colors.text,
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });
 

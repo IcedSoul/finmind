@@ -4,3 +4,4 @@ export { default as Loading } from './Loading';
 export { default as EmptyState } from './EmptyState';
 export { default as BillItem } from './BillItem';
 export { default as StatCard } from './StatCard';
+export { default as CustomTextInput } from './common/CustomTextInput';

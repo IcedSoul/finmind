@@ -6,7 +6,16 @@ export const formatCurrency = (amount: number): string => {
 };
 
 export const formatDate = (dateString: string): string => {
+  if (!dateString) {
+    return '未知日期';
+  }
+
   const date = new Date(dateString);
+
+  if (isNaN(date.getTime())) {
+    return '无效日期';
+  }
+
   const now = new Date();
   const diffTime = Math.abs(now.getTime() - date.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -27,7 +36,16 @@ export const formatDate = (dateString: string): string => {
 };
 
 export const formatTime = (dateString: string): string => {
+  if (!dateString) {
+    return '--:--';
+  }
+
   const date = new Date(dateString);
+
+  if (isNaN(date.getTime())) {
+    return '--:--';
+  }
+
   return date.toLocaleTimeString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit',
@@ -35,7 +53,16 @@ export const formatTime = (dateString: string): string => {
 };
 
 export const formatDateTime = (dateString: string): string => {
+  if (!dateString) {
+    return '未知时间';
+  }
+
   const date = new Date(dateString);
+
+  if (isNaN(date.getTime())) {
+    return '无效时间';
+  }
+
   return date.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
@@ -156,7 +183,7 @@ export const calculateTotalAmount = (
 export const getCategoryIcon = (category: string): string => {
   const iconMap: { [key: string]: string } = {
     餐饮: 'restaurant',
-    交通: 'car',
+    交通: 'truck',
     购物: 'shopping-bag',
     娱乐: 'music',
     医疗: 'heart',
@@ -199,8 +226,8 @@ export const exportToCSV = (bills: Bill[]): string => {
     ...bills.map(bill =>
       [
         formatDateTime(bill.time),
-        bill.channel,
-        bill.merchant,
+        bill?.channel || '未知',
+        bill?.merchant || '未知',
         bill.type === 'income' ? '收入' : '支出',
         bill.amount,
         bill.category,

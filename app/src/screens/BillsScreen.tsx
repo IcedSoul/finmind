@@ -2,101 +2,294 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
-  TextInput,
   RefreshControl,
   Alert,
+  ScrollView,
+  Dimensions,
+  StatusBar,
+  PanGestureHandler,
+  GestureHandlerRootView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation';
 import Icon from 'react-native-vector-icons/Feather';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Bill } from '@/types';
-import { formatCurrency, formatDate, groupBillsByDate } from '@/utils';
+import { formatCurrency, formatDate } from '@/utils';
 import { useBillsStore } from '@/store/billsStore';
-type FilterType = 'all' | 'income' | 'expense';
-type SortType = 'time' | 'amount';
+import MonthYearPicker from '@/components/MonthYearPicker';
+import DailyBills from '@/components/DailyBills';
 
-interface FilterButtonProps {
-  title: string;
-  isActive: boolean;
-  onPress: () => void;
+const { width: screenWidth } = Dimensions.get('window');
+
+// 响应式计算函数
+const getResponsiveCalendarLayout = () => {
+  const containerMargin = 16; // calendar container margin
+  const containerPadding = 8; // calendar container padding
+  const totalHorizontalSpace = containerMargin * 2 + containerPadding * 2; // 48
+  
+  // 可用宽度 = 屏幕宽度 - 容器边距和内边距
+  const availableWidth = screenWidth - totalHorizontalSpace;
+  
+  // 每个日期格子的宽度，确保7列完美适配
+  const dayWidth = Math.floor(availableWidth / 7);
+  
+  // 计算实际使用的总宽度
+  const actualUsedWidth = dayWidth * 7;
+  
+  // 如果有剩余空间，平均分配给左右padding
+  const remainingSpace = availableWidth - actualUsedWidth;
+  const extraPadding = Math.floor(remainingSpace / 2);
+  
+  return {
+    dayWidth,
+    extraPadding,
+    availableWidth,
+  };
+};
+
+// 获取响应式布局参数
+const responsiveLayout = getResponsiveCalendarLayout();
+
+// Calendar helper functions
+const getDaysInMonth = (year: number, month: number) => {
+  return new Date(year, month + 1, 0).getDate();
+};
+
+const getFirstDayOfMonth = (year: number, month: number) => {
+  return new Date(year, month, 1).getDay();
+};
+
+const isSameDay = (date1: Date, date2: Date) => {
+  return date1.getFullYear() === date2.getFullYear() &&
+         date1.getMonth() === date2.getMonth() &&
+         date1.getDate() === date2.getDate();
+};
+
+const formatDateKey = (date: Date) => {
+  return date.toDateString();
+};
+
+interface CalendarDayProps {
+  date: Date;
+  isSelected: boolean;
+  isToday: boolean;
+  dayIncome: number;
+  dayExpense: number;
+  onPress: (date: Date) => void;
 }
 
-interface BillItemProps {
-  bill: Bill;
+interface MonthCalendarProps {
+  selectedDate: Date;
+  onDateSelect: (date: Date) => void;
+  bills: Bill[];
+}
+
+interface DailyTransactionProps {
+  date: Date;
+  bills: Bill[];
   onEdit: (bill: Bill) => void;
   onDelete: (billId: string) => void;
 }
 
-interface SectionHeaderProps {
-  date: string;
-}
-
-const FilterButton: React.FC<FilterButtonProps> = ({
-  title,
-  isActive,
+const CalendarDay: React.FC<CalendarDayProps> = ({
+  date,
+  isSelected,
+  isToday,
+  dayIncome,
+  dayExpense,
   onPress,
-}) => (
-  <TouchableOpacity
-    style={[styles.filterButton, isActive && styles.filterButtonActive]}
-    onPress={onPress}
-  >
-    <Text
+}) => {
+  return (
+    <TouchableOpacity
       style={[
-        styles.filterButtonText,
-        isActive && styles.filterButtonTextActive,
+        styles.calendarDay,
+        isSelected && styles.calendarDaySelected,
+        isToday && styles.calendarDayToday,
       ]}
+      onPress={() => onPress(date)}
     >
-      {title}
-    </Text>
-  </TouchableOpacity>
-);
-
-const BillItem: React.FC<BillItemProps> = ({ bill, onEdit, onDelete }) => (
-  <TouchableOpacity
-    style={styles.billItem}
-    onPress={() => onEdit(bill)}
-    onLongPress={() => onDelete(bill.id.toString())}
-  >
-    <View style={styles.billContent}>
-      <View style={styles.billInfo}>
-        <Text style={styles.billMerchant}>{bill.merchant}</Text>
-        {bill.description && (
-          <Text style={styles.billDescription}>{bill.description}</Text>
+      <Text
+        style={[
+          styles.calendarDayText,
+          isSelected && styles.calendarDayTextSelected,
+          isToday && styles.calendarDayTextToday,
+        ]}
+        numberOfLines={1}
+      >
+        {date.getDate()}
+      </Text>
+      <View style={styles.calendarDayAmounts}>
+        {dayIncome > 0 ? (
+          <Text style={[styles.calendarDayAmount, styles.incomeAmount]} numberOfLines={1} ellipsizeMode="tail">+{formatCurrency(dayIncome)}</Text>
+        ) : (
+          <View style={styles.emptyAmount} />
         )}
-        <View style={styles.billMeta}>
-          <Text style={styles.billCategory}>{bill.category}</Text>
-          <Text style={styles.billTime}>
-            {new Date(bill.time).toLocaleTimeString('zh-CN', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
-        </View>
+        {dayExpense > 0 ? (
+          <Text style={[styles.calendarDayAmount, styles.expenseAmount, styles.expenseAmountSmall]} numberOfLines={1} ellipsizeMode="tail">-{formatCurrency(dayExpense)}</Text>
+        ) : (
+          <View style={styles.emptyAmount} />
+        )}
       </View>
-      <View style={styles.billAmount}>
-        <Text
-          style={[
-            styles.billAmountText,
-            bill.type === 'income' ? styles.incomeAmount : styles.expenseAmount,
-          ]}
-        >
-          {bill.type === 'income' ? '+' : '-'}
-          {formatCurrency(bill.amount)}
-        </Text>
+    </TouchableOpacity>
+  );
+};
+
+const MonthCalendar: React.FC<MonthCalendarProps> = ({ selectedDate, onDateSelect, bills }) => {
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth();
+  const daysInMonth = getDaysInMonth(year, month);
+  const firstDay = getFirstDayOfMonth(year, month);
+  const today = new Date();
+  
+  // Group bills by date
+  const billsByDate = useMemo(() => {
+    const grouped: { [key: string]: Bill[] } = {};
+    bills?.forEach(bill => {
+      const billDate = new Date(bill.time);
+      const key = formatDateKey(billDate);
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+      grouped[key].push(bill);
+    });
+    return grouped;
+  }, [bills]);
+  
+  const getDayData = (date: Date) => {
+    const key = formatDateKey(date);
+    const dayBills = billsByDate[key] || [];
+    const dayIncome = dayBills.filter(bill => bill.type === 'income').reduce((sum, bill) => sum + bill.amount, 0);
+    const dayExpense = dayBills.filter(bill => bill.type === 'expense').reduce((sum, bill) => sum + bill.amount, 0);
+    return { dayIncome, dayExpense };
+  };
+  
+  const renderCalendarDays = () => {
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<View key={`empty-${i}`} style={styles.calendarDay} />);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const { dayIncome, dayExpense } = getDayData(date);
+      const isSelected = isSameDay(date, selectedDate);
+      const isToday = isSameDay(date, today);
+      
+      days.push(
+        <CalendarDay
+          key={day}
+          date={date}
+          isSelected={isSelected}
+          isToday={isToday}
+          dayIncome={dayIncome}
+          dayExpense={dayExpense}
+          onPress={onDateSelect}
+        />
+      );
+    }
+    
+    return days;
+  };
+  
+  const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+  
+  return (
+    <View style={styles.calendar}>
+      <View style={styles.weekHeader}>
+        {weekDays.map((day, index) => (
+          <Text key={index} style={styles.weekDayText}>{day}</Text>
+        ))}
+      </View>
+      <View style={styles.calendarGrid}>
+        {renderCalendarDays()}
       </View>
     </View>
-  </TouchableOpacity>
-);
+  );
+};
 
-const SectionHeader: React.FC<SectionHeaderProps> = ({ date }) => (
-  <View style={styles.sectionHeader}>
-    <Text style={styles.sectionHeaderText}>{formatDate(date)}</Text>
-  </View>
-);
+const DailyBillsLegacy = ({ date, bills, onEdit, onDelete }: {
+  date: Date;
+  bills: Bill[];
+  onEdit: (bill: Bill) => void;
+  onDelete: (billId: string) => void;
+}) => {
+  if (!bills || bills.length === 0) {
+    return (
+      <View style={styles.emptyState}>
+        <Icon name="file-text" size={48} color="#DDD6FE" />
+        <Text style={styles.emptyText}>该日期暂无交易记录</Text>
+      </View>
+    );
+  }
+
+  const dateObj = new Date(date);
+  const dayName = dateObj.toLocaleDateString('zh-CN', { weekday: 'short' });
+  const dayMonth = dateObj.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+  
+  const dayIncome = bills.filter(bill => bill.type === 'income').reduce((sum, bill) => sum + bill.amount, 0);
+  const dayExpense = bills.filter(bill => bill.type === 'expense').reduce((sum, bill) => sum + bill.amount, 0);
+
+  return (
+    <View style={styles.dailyBillsContainer}>
+      <View style={styles.dailyHeader}>
+        <View style={styles.dateInfo}>
+          <Text style={styles.dateText}>{dayMonth}</Text>
+          <Text style={styles.dayText}>{dayName}</Text>
+        </View>
+        <View style={styles.dailySummary}>
+          {dayIncome > 0 && (
+            <Text style={[styles.dailyAmount, styles.incomeAmount]}>+{formatCurrency(dayIncome)}</Text>
+          )}
+          {dayExpense > 0 && (
+            <Text style={[styles.dailyAmount, styles.expenseAmount]}>-{formatCurrency(dayExpense)}</Text>
+          )}
+        </View>
+      </View>
+      {bills.map((bill, index) => (
+        <TouchableOpacity
+          key={bill.id?.toString() || index}
+          style={styles.billItem}
+          onPress={() => onEdit(bill)}
+          onLongPress={() => onDelete(bill.id.toString())}
+        >
+          <View style={styles.billIcon}>
+            <Icon 
+              name={bill.type === 'income' ? 'trending-up' : 'trending-down'} 
+              size={16} 
+              color={bill.type === 'income' ? '#00B894' : '#E17055'} 
+            />
+          </View>
+          <View style={styles.billInfo}>
+            <Text style={styles.billMerchant}>{bill.description || bill.category}</Text>
+            <Text style={styles.billCategory}>{bill.category}</Text>
+          </View>
+          <Text style={[styles.billAmount, bill.type === 'income' ? styles.incomeAmount : styles.expenseAmount]}>
+            {bill.type === 'income' ? '+' : '-'}{formatCurrency(bill.amount)}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
+
+const getCategoryEmoji = (category: string) => {
+  const emojiMap: { [key: string]: string } = {
+    '餐饮': '🍽️',
+    '交通': '🚗',
+    '购物': '🛍️',
+    '娱乐': '🎮',
+    '医疗': '🏥',
+    '其他': '📝'
+  };
+  return emojiMap[category] || '📝';
+};
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -109,52 +302,29 @@ const BillsScreen = () => {
     fetchBills();
   }, [fetchBills]);
 
-  const [searchText, setSearchText] = useState('');
-  const [filterType, setFilterType] = useState<FilterType>('all');
-  const [sortType, setSortType] = useState<SortType>('time');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
-  const filteredAndSortedBills = useMemo(() => {
+  const selectedDateBills = useMemo(() => {
     if (!bills || !Array.isArray(bills)) {
       return [];
     }
-
-    let filtered = bills;
-
-    if (searchText) {
-      filtered = filtered.filter(
-        (bill: Bill) =>
-          bill.merchant.toLowerCase().includes(searchText.toLowerCase()) ||
-          bill.description?.toLowerCase().includes(searchText.toLowerCase()),
-      );
-    }
-
-    if (filterType !== 'all') {
-      filtered = filtered.filter((bill: Bill) => bill.type === filterType);
-    }
-
-    if (selectedCategory) {
-      filtered = filtered.filter(
-        (bill: Bill) => bill.category === selectedCategory,
-      );
-    }
-
-    filtered.sort((a, b) => {
-      if (sortType === 'time') {
-        return new Date(b.time).getTime() - new Date(a.time).getTime();
-      } else {
-        return b.amount - a.amount;
-      }
+    
+    return bills.filter(bill => {
+      const billDate = new Date(bill.time);
+      return isSameDay(billDate, selectedDate);
     });
+  }, [bills, selectedDate]);
 
-    return filtered;
-  }, [bills, searchText, filterType, selectedCategory, sortType]);
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+  };
 
-  const groupedBills = useMemo(() => {
-    return groupBillsByDate(filteredAndSortedBills);
-  }, [filteredAndSortedBills]);
+  const handleMonthSelect = (date: Date) => {
+    setSelectedDate(date);
+    setShowMonthPicker(false);
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -193,145 +363,76 @@ const BillsScreen = () => {
     navigation.navigate('AddBill');
   };
 
-  const clearFilters = () => {
-    setSearchText('');
-    setFilterType('all');
-    setSelectedCategory('');
-    setSortType('time');
-  };
-
-  const renderItem = ({ item }: { item: any }) => {
-    if (item.type === 'header') {
-      return <SectionHeader date={item.date} />;
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    if (direction === 'prev') {
+      newDate.setMonth(newDate.getMonth() - 1);
+    } else {
+      newDate.setMonth(newDate.getMonth() + 1);
     }
-    return (
-      <BillItem
-        bill={item}
-        onEdit={handleEditBill}
-        onDelete={handleDeleteBill}
-      />
-    );
+    setSelectedDate(newDate);
   };
 
-  const flatListData = useMemo(() => {
-    const data: any[] = [];
-    Object.entries(groupedBills).forEach(([date, billsArray]) => {
-      data.push({ type: 'header', date, id: `header-${date}` });
-      billsArray.forEach(bill => {
-        data.push({ ...bill, type: 'bill' });
-      });
-    });
-    return data;
-  }, [groupedBills]);
+  const handleSwipeGesture = (direction: 'left' | 'right') => {
+    if (direction === 'left') {
+      navigateMonth('next');
+    } else {
+      navigateMonth('prev');
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.searchContainer}>
-          <Icon
-            name={'search' as any}
-            size={20}
-            color="#8E8E93"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="搜索商户或备注"
-            value={searchText}
-            onChangeText={setSearchText}
-            placeholderTextColor="#8E8E93"
-          />
-          {searchText ? (
-            <TouchableOpacity onPress={() => setSearchText('')}>
-              <Icon name={'x' as any} size={20} color="#8E8E93" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-        <TouchableOpacity
-          style={styles.filterToggle}
-          onPress={() => setShowFilters(!showFilters)}
-        >
-          <Icon name={'filter' as any} size={20} color="#007AFF" />
-        </TouchableOpacity>
-      </View>
-
-      {showFilters && (
-        <View style={styles.filtersContainer}>
-          <View style={styles.filterRow}>
-            <Text style={styles.filterLabel}>类型:</Text>
-            <View style={styles.filterButtons}>
-              <FilterButton
-                title="全部"
-                isActive={filterType === 'all'}
-                onPress={() => setFilterType('all')}
-              />
-              <FilterButton
-                title="收入"
-                isActive={filterType === 'income'}
-                onPress={() => setFilterType('income')}
-              />
-              <FilterButton
-                title="支出"
-                isActive={filterType === 'expense'}
-                onPress={() => setFilterType('expense')}
-              />
-            </View>
-          </View>
-
-          <View style={styles.filterRow}>
-            <Text style={styles.filterLabel}>排序:</Text>
-            <View style={styles.filterButtons}>
-              <FilterButton
-                title="时间"
-                isActive={sortType === 'time'}
-                onPress={() => setSortType('time')}
-              />
-              <FilterButton
-                title="金额"
-                isActive={sortType === 'amount'}
-                onPress={() => setSortType('amount')}
-              />
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.clearFiltersButton}
-            onPress={clearFilters}
+      <StatusBar barStyle="light-content" backgroundColor="#6C5CE7" />
+      
+      <LinearGradient
+        colors={['#6C5CE7', '#A29BFE']}
+        style={styles.header}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.monthSelector}
+            onPress={() => setShowMonthPicker(true)}
           >
-            <Text style={styles.clearFiltersText}>清除筛选</Text>
+            <Text style={styles.headerTitle}>
+              {selectedDate.getFullYear()}年{selectedDate.getMonth() + 1}月
+            </Text>
+            <Icon name="chevron-down" size={16} color="white" style={styles.dropdownIcon} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.headerButton} onPress={navigateToAddBill}>
+            <Icon name="plus" size={24} color="white" />
           </TouchableOpacity>
         </View>
-      )}
+      </LinearGradient>
 
-      <FlatList
-        data={flatListData}
-        renderItem={renderItem}
-        keyExtractor={item => item.id.toString()}
+      <ScrollView 
+        style={styles.content}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing || loading}
-            onRefresh={onRefresh}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Icon name={'file-text' as any} size={64} color="#C7C7CC" />
-            <Text style={styles.emptyText}>暂无账单记录</Text>
-            <TouchableOpacity
-              style={styles.addBillButton}
-              onPress={navigateToAddBill}
-            >
-              <Text style={styles.addBillButtonText}>添加账单</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+      >
+        <MonthCalendar
+          selectedDate={selectedDate}
+          onDateSelect={handleDateSelect}
+          bills={bills}
+        />
+        
+        <View style={styles.dailyBillsWrapper}>
+          <DailyBills
+            date={selectedDate.toDateString()}
+            bills={selectedDateBills}
+          />
+        </View>
+      </ScrollView>
 
-      <TouchableOpacity style={styles.fab} onPress={navigateToAddBill}>
-        <Icon name={'plus' as any} size={24} color="#FFFFFF" />
-      </TouchableOpacity>
+      <MonthYearPicker
+        visible={showMonthPicker}
+        selectedDate={selectedDate}
+        onDateSelect={handleMonthSelect}
+        onClose={() => setShowMonthPicker(false)}
+      />
     </View>
   );
 };
@@ -339,119 +440,223 @@ const BillsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#f5f5f5',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingTop: 50,
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
   },
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F7',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    marginRight: 12,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    fontSize: 16,
-    color: '#1C1C1E',
-    paddingVertical: 0,
-    justifyContent: 'center',
-    textAlignVertical: 'center',
-  },
-  filterToggle: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F7',
-    borderRadius: 8,
-  },
-  filtersContainer: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  filterLabel: {
-    fontSize: 14,
-    color: '#1C1C1E',
-    width: 50,
-    fontWeight: '500',
-  },
-  filterButtons: {
-    flexDirection: 'row',
-    flex: 1,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: '#F2F2F7',
-    marginRight: 8,
-  },
-  filterButtonActive: {
-    backgroundColor: '#007AFF',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    color: '#1C1C1E',
-  },
-  filterButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  clearFiltersButton: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  clearFiltersText: {
-    fontSize: 14,
-    color: '#007AFF',
-  },
-  listContainer: {
-    paddingBottom: 100,
-  },
-  sectionHeader: {
-    backgroundColor: '#F2F2F7',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  sectionHeaderText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#8E8E93',
-  },
-  billItem: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  billContent: {
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  monthSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  dropdownIcon: {
+    marginLeft: 4,
+  },
+  headerButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  content: {
+    flex: 1,
+  },
+  calendar: {
+    backgroundColor: '#FFFFFF',
+    margin: 16,
+    borderRadius: 10,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  weekHeader: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    paddingHorizontal: responsiveLayout.extraPadding,
+  },
+  weekDayText: {
+    width: responsiveLayout.dayWidth,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: responsiveLayout.extraPadding,
+  },
+  calendarDay: {
+    width: responsiveLayout.dayWidth,
+    height: 54,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+    marginVertical: 1,
+  },
+  calendarDaySelected: {
+    backgroundColor: '#667eea',
+    borderRadius: 6,
+  },
+  calendarDayToday: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 6,
+  },
+  calendarDayText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    textAlign: 'center',
+    marginBottom: 1,
+  },
+  calendarDayTextSelected: {
+    color: '#FFFFFF',
+  },
+  calendarDayTextToday: {
+    color: '#667eea',
+  },
+  calendarDayAmounts: {
+    alignItems: 'center',
+    gap: 1,
+    width: '100%',
+  },
+  calendarDayAmount: {
+    fontSize: 9,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  expenseAmountSmall: {
+    fontSize: 8,
+  },
+  dailyTransactions: {
+    backgroundColor: '#FFFFFF',
+    margin: 8,
+    marginTop: 0,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dailyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
+  },
+  dailyDate: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1C1C1E',
+  },
+  dailySummary: {
+    alignItems: 'flex-end',
+  },
+  dailyIncome: {
+    fontSize: 14,
+    color: '#4ECDC4',
+    fontWeight: '600',
+  },
+  dailyExpense: {
+    fontSize: 14,
+    color: '#FF6B6B',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  transactionList: {
+    padding: 12,
+    paddingTop: 0,
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
+  },
+  transactionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F2F2F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  categoryEmoji: {
+    fontSize: 20,
+  },
+  transactionContent: {
+    flex: 1,
+  },
+  transactionCategory: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 2,
+  },
+  transactionDescription: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  sectionHeaderText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  billItem: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 12,
+    marginVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  billContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  billIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   billInfo: {
     flex: 1,
@@ -459,67 +664,93 @@ const styles = StyleSheet.create({
   },
   billMerchant: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#1C1C1E',
-    marginBottom: 4,
-  },
-  billDescription: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginBottom: 4,
-  },
-  billMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 2,
   },
   billCategory: {
-    fontSize: 12,
-    color: '#8E8E93',
-    backgroundColor: '#F2F2F7',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 2,
   },
   billTime: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: '#9CA3AF',
+    fontWeight: '500',
   },
   billAmount: {
     alignItems: 'flex-end',
   },
   billAmountText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   incomeAmount: {
-    color: '#34C759',
+    color: '#4ECDC4',
+  },
+  emptyAmount: {
+    height: 12,
   },
   expenseAmount: {
-    color: '#FF3B30',
+    color: '#FF6B6B',
   },
-  emptyState: {
+  dailyBillsContainer: {
+    backgroundColor: '#FFFFFF',
+    margin: 16,
+    marginTop: 0,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dateInfo: {
     flex: 1,
+  },
+  dateText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1C1C1E',
+  },
+  dayText: {
+    fontSize: 12,
+    color: '#718096',
+    marginTop: 2,
+  },
+  dailyAmount: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  billIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F2F2F7',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 80,
+    marginRight: 12,
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: 'center',
   },
   emptyText: {
     fontSize: 16,
     color: '#8E8E93',
-    marginTop: 16,
-    marginBottom: 24,
+    textAlign: 'center',
   },
   addBillButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#8B5CF6',
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   addBillButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   fab: {
     position: 'absolute',
@@ -528,14 +759,19 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#8B5CF6',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 12,
     elevation: 8,
+  },
+  dailyBillsWrapper: {
+    marginHorizontal: 16,
+    marginTop: 0,
+    marginBottom: 16,
   },
 });
 

@@ -21,14 +21,39 @@ export const useForm = <T extends Record<string, any>>(initialValues: T) => {
   };
 
   const validateField = (name: keyof T, value: any) => {
-    // 简单的验证逻辑，可以根据需要扩展
     if (value === '' || value === undefined || value === null) {
-      setErrors(prev => ({ ...prev, [name]: '此字段不能为空' }));
+      setErrors(prev => ({ ...prev, [name]: 'This field is required' }));
       return false;
-    } else {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-      return true;
     }
+    
+    // Email validation
+    if (name === 'email' && typeof value === 'string') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        setErrors(prev => ({ ...prev, [name]: 'Please enter a valid email address' }));
+        return false;
+      }
+    }
+    
+    // Password validation
+    if (name === 'password' && typeof value === 'string') {
+      if (value.length < 6) {
+        setErrors(prev => ({ ...prev, [name]: 'Password must be at least 6 characters' }));
+        return false;
+      }
+    }
+    
+    // Confirm password validation
+    if (name === 'confirmPassword' && typeof value === 'string') {
+      const password = (values as any).password;
+      if (password && value !== password) {
+        setErrors(prev => ({ ...prev, [name]: 'Passwords do not match' }));
+        return false;
+      }
+    }
+    
+    setErrors(prev => ({ ...prev, [name]: '' }));
+    return true;
   };
 
   const validate = (): boolean => {

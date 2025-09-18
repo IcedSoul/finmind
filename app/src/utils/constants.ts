@@ -19,7 +19,7 @@ export const BILL_TYPES = {
 
 export const DEFAULT_CATEGORIES = [
   { id: '1', name: '餐饮', icon: 'utensils', color: '#FF6B6B' },
-  { id: '2', name: '交通', icon: 'car', color: '#4ECDC4' },
+  { id: '2', name: '交通', icon: 'truck', color: '#4ECDC4' },
   { id: '3', name: '购物', icon: 'shopping-bag', color: '#45B7D1' },
   { id: '4', name: '娱乐', icon: 'gamepad-2', color: '#96CEB4' },
   { id: '5', name: '医疗', icon: 'heart', color: '#FFEAA7' },

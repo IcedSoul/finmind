@@ -1,874 +1,701 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
+  SafeAreaView,
   ScrollView,
+  TextInput,
   Alert,
+  StatusBar,
   Modal,
-  FlatList,
+  Platform,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import { useForm, useCategories } from '@/hooks';
-import { validateAmount, getCategoryIcon, getCategoryColor } from '@/utils';
-import { aiService } from '@/services/aiService';
-import { Bill } from '@/types';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
+import { useCategoriesStore } from '@/store/categoriesStore';
 import { useBillsStore } from '@/store/billsStore';
+import { LinearGradient } from 'expo-linear-gradient';
 
-type BillType = 'income' | 'expense';
-
-interface TypeButtonProps {
-  type: BillType;
-  title: string;
-  billType: BillType;
-  setBillType: (type: BillType) => void;
-}
-
-interface CategoryItemProps {
-  category: string;
-  setValue: (
-    name: 'merchant' | 'amount' | 'category' | 'description' | 'time',
-    value: string,
-  ) => void;
-  setShowCategoryModal: (show: boolean) => void;
-}
-
-interface AIModalProps {
-  showAIModal: boolean;
-  setShowAIModal: (show: boolean) => void;
-  aiProcessing: boolean;
-  handleAIRecognition: (text: string) => void;
-}
-
-const TypeButton: React.FC<TypeButtonProps> = ({
-  type,
-  title,
-  billType,
-  setBillType,
-}) => (
-  <TouchableOpacity
-    style={[
-      styles.typeButton,
-      billType === type && styles.typeButtonActive,
-      billType === type && type === 'income' && styles.incomeButtonActive,
-      billType === type && type === 'expense' && styles.expenseButtonActive,
-    ]}
-    onPress={() => setBillType(type)}
-  >
-    <Text
-      style={[
-        styles.typeButtonText,
-        billType === type && styles.typeButtonTextActive,
-      ]}
-    >
-      {title}
-    </Text>
-  </TouchableOpacity>
-);
-
-const CategoryItem: React.FC<CategoryItemProps> = ({
-  category,
-  setValue,
-  setShowCategoryModal,
-}) => (
-  <TouchableOpacity
-    style={styles.categoryItem}
-    onPress={() => {
-      setValue('category', category);
-      setShowCategoryModal(false);
-    }}
-  >
-    <View
-      style={[
-        styles.categoryIcon,
-        { backgroundColor: getCategoryColor(category) },
-      ]}
-    >
-      <Icon name={getCategoryIcon(category) as any} size={20} color="#FFFFFF" />
-    </View>
-    <Text style={styles.categoryName}>{category}</Text>
-  </TouchableOpacity>
-);
-
-const AIModal: React.FC<AIModalProps> = ({
-  showAIModal,
-  setShowAIModal,
-  aiProcessing,
-  handleAIRecognition,
-}) => {
-  const [aiText, setAiText] = useState('');
-
-  return (
-    <Modal
-      visible={showAIModal}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={() => setShowAIModal(false)}
-    >
-      <View style={styles.aiModalContainer}>
-        <View style={styles.aiModalHeader}>
-          <TouchableOpacity onPress={() => setShowAIModal(false)}>
-            <Icon name={'x' as any} size={24} color="#1C1C1E" />
-          </TouchableOpacity>
-          <Text style={styles.aiModalTitle}>AI智能识别</Text>
-          <View style={styles.placeholderView} />
-        </View>
-
-        <View style={styles.aiModalContent}>
-          <Text style={styles.aiModalDescription}>
-            输入账单相关文本，AI将自动识别商户、金额、分类等信息
-          </Text>
-
-          <TextInput
-            style={styles.aiTextInput}
-            placeholder="例如：在星巴克消费了35元买咖啡"
-            value={aiText}
-            onChangeText={setAiText}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-
-          <TouchableOpacity
-            style={[
-              styles.aiRecognizeButton,
-              (!aiText.trim() || aiProcessing) &&
-                styles.aiRecognizeButtonDisabled,
-            ]}
-            onPress={() => handleAIRecognition(aiText)}
-            disabled={!aiText.trim() || aiProcessing}
-          >
-            <Text style={styles.aiRecognizeButtonText}>
-              {aiProcessing ? '识别中...' : '开始识别'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-};
-
-const AddBillScreen = () => {
+const AddBillScreen: React.FC = () => {
   const navigation = useNavigation();
-  const route = useRoute();
-  const { createBill, updateBill, loading } = useBillsStore();
-  const { categories } = useCategories();
-
-  const editingBill = (route.params as any)?.bill as Bill | undefined;
-  const aiData = (route.params as any)?.aiData;
-  const isEditing = !!editingBill;
-
-  const [billType, setBillType] = useState<BillType>(
-    editingBill?.type || 'expense',
-  );
-
-  const filteredCategories = useMemo(
-    () => categories.filter(category => category.type === billType),
-    [categories, billType],
-  );
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [showAIModal, setShowAIModal] = useState(false);
-  const [aiProcessing, setAiProcessing] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [tempDate, setTempDate] = useState(new Date());
-  const [datePickerMode, setDatePickerMode] = useState<'date' | 'time'>('date');
-
-  const { values, errors, handleChange } = useForm({
-    merchant: editingBill?.merchant || '',
-    amount: editingBill?.amount?.toString() || '',
-    category: editingBill?.category || '',
-    description: editingBill?.description || '',
-    time: editingBill?.time || new Date().toISOString(),
-  });
-
-  const setValue = useCallback(
-    (
-      name: 'merchant' | 'amount' | 'category' | 'description' | 'time',
-      value: string,
-    ) => {
-      handleChange(name, value);
-    },
-    [handleChange],
-  );
-
-  const handleSubmit = async () => {
-    if (!values.merchant.trim()) {
-      Alert.alert('错误', '请输入商户名称');
-      return;
-    }
-    if (!values.amount.trim()) {
-      Alert.alert('错误', '请输入金额');
-      return;
-    }
-    if (!validateAmount(values.amount)) {
-      Alert.alert('错误', '请输入有效金额');
-      return;
-    }
-    if (!values.category.trim()) {
-      Alert.alert('错误', '请选择分类');
-      return;
-    }
-
-    try {
-      // 找到选中分类的ID
-      const selectedCategory = categories.find(
-        cat => cat.name === values.category,
-      );
-      if (!selectedCategory) {
-        Alert.alert('错误', '无效的分类选择');
-        return;
-      }
-
-      const billData = {
-        merchant: values.merchant,
-        amount: parseFloat(values.amount),
-        category_id: parseInt(selectedCategory.id),
-        description: values.description,
-        type: billType,
-        bill_time: values.time,
-      };
-
-      if (isEditing && editingBill) {
-        await updateBill(editingBill.id.toString(), billData);
-        Alert.alert('成功', '账单已更新');
-      } else {
-        await createBill(billData);
-        Alert.alert('成功', '账单已添加');
-      }
-
-      navigation.goBack();
-    } catch (error: any) {
-      Alert.alert(
-        '错误',
-        error.message || (isEditing ? '更新账单失败' : '添加账单失败'),
-      );
-    }
-  };
+  const { t } = useTranslation();
+  const { categories, loading, fetchCategories } = useCategoriesStore();
+  const { addBill } = useBillsStore();
+  
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedType, setSelectedType] = useState<'income' | 'expense'>('expense');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [showDateTimePicker, setShowDateTimePicker] = useState(false);
+  const [dateTimePickerMode, setDateTimePickerMode] = useState<'date' | 'time'>('date');
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
+  const [showTagInput, setShowTagInput] = useState(false);
 
   useEffect(() => {
-    if (aiData) {
-      setValue('merchant', aiData.merchant || '');
-      setValue('amount', aiData.amount?.toString() || '');
-      setValue('category', aiData.category || '');
-      setValue('description', aiData.description || '');
-      if (aiData.type) {
-        setBillType(aiData.type);
-      }
-    }
-  }, [aiData, setValue]);
+    fetchCategories();
+  }, [fetchCategories]);
 
-  const handleAIRecognition = async (text: string) => {
-    setAiProcessing(true);
-    try {
-      const result = await aiService.parseTextContent(text);
-      if (result.success && result.data && result.data.length > 0) {
-        const firstBill = result.data[0];
-        setValue('merchant', firstBill.merchant || '');
-        setValue('amount', firstBill.amount?.toString() || '');
-        setValue('category', firstBill.category || '');
-        setValue('description', '');
-        if (firstBill.type) {
-          setBillType(firstBill.type);
-        }
-        Alert.alert('成功', 'AI识别完成');
-      } else {
-        Alert.alert('提示', '未能识别出有效信息');
-      }
-    } catch (error) {
-      Alert.alert('错误', 'AI识别失败');
-    } finally {
-      setAiProcessing(false);
-      setShowAIModal(false);
+  const formatCurrency = (value: string) => {
+    const numericValue = value.replace(/[^0-9]/g, '');
+    if (numericValue === '') return '';
+    return new Intl.NumberFormat('zh-CN').format(parseInt(numericValue));
+  };
+
+  const handleAmountChange = (text: string) => {
+    const numericValue = text.replace(/[^0-9]/g, '');
+    setAmount(numericValue);
+  };
+
+  const handleAddTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag('');
+      setShowTagInput(false);
     }
   };
 
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleDateTimeChange = (event: any, selectedDateTime?: Date) => {
+    if (Platform.OS === 'android' && event.type === 'dismissed') {
+      setShowDateTimePicker(false);
+      return;
+    }
+
+    if (selectedDateTime) {
+      if (dateTimePickerMode === 'date') {
+        setSelectedDate(selectedDateTime);
+        if (Platform.OS === 'android') {
+          setShowDateTimePicker(false);
+          setTimeout(() => {
+            setDateTimePickerMode('time');
+            setShowDateTimePicker(true);
+          }, 100);
+        } else {
+          setDateTimePickerMode('time');
+        }
+      } else {
+        setSelectedTime(selectedDateTime);
+        setShowDateTimePicker(false);
+        setDateTimePickerMode('date');
+      }
+    } else {
+      setShowDateTimePicker(false);
+      setDateTimePickerMode('date');
+    }
+  };
+
+  const handleDateTimePress = () => {
+    setDateTimePickerMode('date');
+    setShowDateTimePicker(true);
+  };
+
+  const handleSave = async () => {
+    if (!amount || !selectedCategory) {
+      Alert.alert(t('common.error'), t('addBill.required'));
+      return;
+    }
+
+    if (parseInt(amount) <= 0) {
+      Alert.alert(t('common.error'), t('addBill.invalidAmount'));
+      return;
+    }
+
+    const billData = {
+      amount: parseInt(amount),
+      description,
+      type: selectedType,
+      category: selectedCategory,
+      date: selectedDate,
+      time: selectedTime,
+      tags,
+    };
+
+    try {
+      await addBill(billData);
+      Alert.alert(t('common.success'), t('addBill.success'), [
+        {
+          text: t('common.ok'),
+          onPress: () => navigation.goBack(),
+        },
+      ]);
+    } catch (error) {
+      Alert.alert(t('common.error'), t('addBill.error'));
+    }
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(date);
+  };
+
+  const formatTime = (time: Date) => {
+    return new Intl.DateTimeFormat('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(time);
+  };
+
+  const filteredCategories = categories.filter(cat => cat.type === selectedType);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name={'arrow-left' as any} size={24} color="#1C1C1E" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {isEditing ? '编辑账单' : '添加账单'}
-        </Text>
-        <TouchableOpacity onPress={() => setShowAIModal(true)}>
-          <Icon name={'zap' as any} size={24} color="#007AFF" />
-        </TouchableOpacity>
-      </View>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#6C5CE7" />
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#6C5CE7', '#A29BFE']}
+          style={styles.header}
+        >
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="x" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('addBill.title')}</Text>
+          <TouchableOpacity onPress={handleSave}>
+            <Text style={styles.saveButton}>{t('addBill.save')}</Text>
+          </TouchableOpacity>
+        </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.typeSelector}>
-          <TypeButton
-            type="expense"
-            title="支出"
-            billType={billType}
-            setBillType={setBillType}
-          />
-          <TypeButton
-            type="income"
-            title="收入"
-            billType={billType}
-            setBillType={setBillType}
-          />
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>商户名称</Text>
-            <TextInput
-              style={[styles.input, errors.merchant && styles.inputError]}
-              placeholder="请输入商户名称"
-              value={values.merchant}
-              onChangeText={text => handleChange('merchant', text)}
-            />
-            {errors.merchant && (
-              <Text style={styles.errorText}>{errors.merchant}</Text>
-            )}
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>金额</Text>
-            <View style={styles.amountContainer}>
-              <Text style={styles.currencySymbol}>¥</Text>
-              <TextInput
-                style={[styles.amountInput, errors.amount && styles.inputError]}
-                placeholder="0.00"
-                value={values.amount}
-                onChangeText={text => handleChange('amount', text)}
-                keyboardType="numeric"
-              />
-            </View>
-            {errors.amount && (
-              <Text style={styles.errorText}>{errors.amount}</Text>
-            )}
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>分类</Text>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.typeSelector}>
             <TouchableOpacity
               style={[
-                styles.categorySelector,
-                errors.category && styles.inputError,
+                styles.typeButton,
+                selectedType === 'expense' && styles.typeButtonActive,
+                { backgroundColor: selectedType === 'expense' ? '#E17055' : '#F8F9FA' },
               ]}
-              onPress={() => setShowCategoryModal(true)}
+              onPress={() => {
+                setSelectedType('expense');
+                setSelectedCategory('');
+              }}
             >
-              {values.category ? (
-                <View style={styles.selectedCategory}>
-                  <View
-                    style={[
-                      styles.categoryIcon,
-                      { backgroundColor: getCategoryColor(values.category) },
-                    ]}
-                  >
-                    <Icon
-                      name={getCategoryIcon(values.category)}
-                      size={16}
-                      color="#FFFFFF"
-                    />
-                  </View>
-                  <Text style={styles.selectedCategoryText}>
-                    {values.category}
-                  </Text>
-                </View>
-              ) : (
-                <Text style={styles.placeholderText}>请选择分类</Text>
-              )}
-              <Icon name="chevron-right" size={16} color="#C7C7CC" />
+              <Icon
+                name="minus"
+                size={18}
+                color={selectedType === 'expense' ? '#FFFFFF' : '#636E72'}
+              />
+              <Text
+                style={[
+                  styles.typeButtonText,
+                  { color: selectedType === 'expense' ? '#FFFFFF' : '#636E72' },
+                ]}
+              >
+                {t('addBill.expense')}
+              </Text>
             </TouchableOpacity>
-            {errors.category && (
-              <Text style={styles.errorText}>{errors.category}</Text>
+            <TouchableOpacity
+              style={[
+                styles.typeButton,
+                selectedType === 'income' && styles.typeButtonActive,
+                { backgroundColor: selectedType === 'income' ? '#00B894' : '#F8F9FA' },
+              ]}
+              onPress={() => {
+                setSelectedType('income');
+                setSelectedCategory('');
+              }}
+            >
+              <Icon
+                name="plus"
+                size={18}
+                color={selectedType === 'income' ? '#FFFFFF' : '#636E72'}
+              />
+              <Text
+                style={[
+                  styles.typeButtonText,
+                  { color: selectedType === 'income' ? '#FFFFFF' : '#636E72' },
+                ]}
+              >
+                {t('addBill.income')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.amountCard}>
+            <Text style={styles.amountLabel}>{t('addBill.amount')}</Text>
+            <View style={styles.amountInputContainer}>
+              <Text style={styles.currencySymbol}>¥</Text>
+              <TextInput
+                style={styles.amountInput}
+                value={formatCurrency(amount)}
+                onChangeText={handleAmountChange}
+                placeholder="0"
+                placeholderTextColor="#636E72"
+                keyboardType="numeric"
+                textAlign="center"
+              />
+            </View>
+          </View>
+
+          <View style={styles.categoryCard}>
+            <Text style={styles.categoryTitle}>{t('addBill.category')}</Text>
+            {loading ? (
+              <Text style={styles.loadingText}>Loading categories...</Text>
+            ) : (
+              <View style={styles.categoryGrid}>
+                {filteredCategories.map((category) => (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={[
+                      styles.categoryItem,
+                      selectedCategory === category.id && {
+                        backgroundColor: category.color,
+                        borderColor: category.color,
+                      },
+                    ]}
+                    onPress={() => setSelectedCategory(category.id)}
+                  >
+                    <View
+                      style={[
+                        styles.categoryIcon,
+                        {
+                          backgroundColor:
+                            selectedCategory === category.id ? 'rgba(255,255,255,0.2)' : '#F8F9FA',
+                        },
+                      ]}
+                    >
+                      <Icon
+                        name={category.icon}
+                        size={18}
+                        color={selectedCategory === category.id ? '#FFFFFF' : category.color}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.categoryName,
+                        {
+                          color: selectedCategory === category.id ? '#FFFFFF' : '#2D3436',
+                        },
+                      ]}
+                    >
+                      {category.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             )}
           </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>备注（可选）</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="添加备注信息"
-              value={values.description}
-              onChangeText={text => handleChange('description', text)}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-          </View>
+          <View style={styles.detailsCard}>
+            <Text style={styles.detailsTitle}>{t('addBill.details')}</Text>
+            
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={styles.textInput}
+                value={description}
+                onChangeText={setDescription}
+                placeholder={t('addBill.descriptionPlaceholder')}
+                placeholderTextColor="#636E72"
+                multiline
+                numberOfLines={2}
+              />
+            </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>时间</Text>
-            <View style={styles.timeContainer}>
-              <TouchableOpacity
-                style={[styles.timeSelector, styles.dateSelector]}
-                onPress={() => {
-                  setTempDate(new Date(values.time));
-                  setDatePickerMode('date');
-                  setShowDatePicker(true);
-                }}
-              >
-                <Text style={styles.timeText}>
-                  {new Date(values.time).toLocaleDateString('zh-CN')}
+            <View style={styles.inputGroup}>
+              <TouchableOpacity style={styles.dateTimeInput} onPress={handleDateTimePress}>
+                <Icon name="calendar" size={18} color="#6C5CE7" />
+                <Text style={styles.dateTimeValue}>
+                  {formatDate(selectedDate)} {formatTime(selectedTime)}
                 </Text>
-                <Icon name="calendar" size={16} color="#C7C7CC" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.timeSelector, styles.timeOnlySelector]}
-                onPress={() => {
-                  setTempDate(new Date(values.time));
-                  setDatePickerMode('time');
-                  setShowDatePicker(true);
-                }}
-              >
-                <Text style={styles.timeText}>
-                  {new Date(values.time).toLocaleTimeString('zh-CN', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false,
-                  })}
-                </Text>
-                <Icon name="clock" size={16} color="#C7C7CC" />
+                <Icon name="chevron-down" size={14} color="#636E72" />
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          <Text style={styles.submitButtonText}>
-            {loading ? '保存中...' : isEditing ? '更新账单' : '添加账单'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <Modal
-        visible={showCategoryModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCategoryModal(false)}
-      >
-        <View style={styles.categoryModalOverlay}>
-          <View style={styles.categoryModalContainer}>
-            <View style={styles.categoryModalHeader}>
-              <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
-                <Icon name="x" size={24} color="#1C1C1E" />
-              </TouchableOpacity>
-              <Text style={styles.categoryModalTitle}>选择分类</Text>
-              <View style={styles.placeholderView} />
-            </View>
-            <FlatList
-              data={filteredCategories}
-              renderItem={({ item }) => (
-                <CategoryItem
-                  category={item.name}
-                  setValue={setValue}
-                  setShowCategoryModal={setShowCategoryModal}
-                />
+            <View style={styles.tagsSection}>
+              <Text style={styles.tagsLabel}>{t('addBill.tags')}</Text>
+              <View style={styles.tagsContainer}>
+                {tags.map((tag, index) => (
+                  <View key={index} style={styles.tagItem}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                    <TouchableOpacity onPress={() => handleRemoveTag(tag)}>
+                      <Icon name="x" size={12} color="#636E72" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <TouchableOpacity
+                  style={styles.addTagButton}
+                  onPress={() => setShowTagInput(true)}
+                >
+                  <Icon name="plus" size={14} color="#6C5CE7" />
+                  <Text style={styles.addTagText}>{t('addBill.addTag')}</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {showTagInput && (
+                <View style={styles.tagInputContainer}>
+                  <TextInput
+                    style={styles.tagInput}
+                    value={newTag}
+                    onChangeText={setNewTag}
+                    placeholder={t('addBill.enterTag')}
+                    placeholderTextColor="#636E72"
+                    autoFocus
+                  />
+                  <TouchableOpacity style={styles.tagConfirmButton} onPress={handleAddTag}>
+                    <Icon name="check" size={14} color="#FFFFFF" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.tagCancelButton}
+                    onPress={() => {
+                      setShowTagInput(false);
+                      setNewTag('');
+                    }}
+                  >
+                    <Icon name="x" size={14} color="#636E72" />
+                  </TouchableOpacity>
+                </View>
               )}
-              keyExtractor={item => item.id}
-              numColumns={3}
-              contentContainerStyle={styles.categoryList}
-            />
+            </View>
           </View>
-        </View>
-      </Modal>
+        </ScrollView>
 
-      <AIModal
-        showAIModal={showAIModal}
-        setShowAIModal={setShowAIModal}
-        aiProcessing={aiProcessing}
-        handleAIRecognition={handleAIRecognition}
-      />
 
-      {showDatePicker && (
-        <DateTimePicker
-          value={tempDate}
-          mode={datePickerMode}
-          display="default"
-          onChange={(event, selectedDate) => {
-            if (event.type === 'set' && selectedDate) {
-              if (datePickerMode === 'date') {
-                const currentTime = new Date(values.time);
-                const newDateTime = new Date(selectedDate);
-                newDateTime.setHours(currentTime.getHours());
-                newDateTime.setMinutes(currentTime.getMinutes());
-                newDateTime.setSeconds(currentTime.getSeconds());
-                setValue('time', newDateTime.toISOString());
-              } else {
-                const currentDate = new Date(values.time);
-                const newDateTime = new Date(currentDate);
-                newDateTime.setHours(selectedDate.getHours());
-                newDateTime.setMinutes(selectedDate.getMinutes());
-                newDateTime.setSeconds(selectedDate.getSeconds());
-                setValue('time', newDateTime.toISOString());
-              }
-            }
-            setShowDatePicker(false);
-          }}
-          themeVariant="light"
-          textColor="#1C1C1E"
-          accentColor="#007AFF"
-        />
-      )}
-    </View>
+
+        {showDateTimePicker && (
+          <DateTimePicker
+            value={dateTimePickerMode === 'date' ? selectedDate : selectedTime}
+            mode={dateTimePickerMode}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleDateTimeChange}
+          />
+        )}
+      </SafeAreaView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#F8F9FA',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight! + 16 : 16,
   },
   headerTitle: {
     fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  saveButton: {
+    fontSize: 16,
     fontWeight: '600',
-    color: '#1C1C1E',
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
+    paddingHorizontal: 16,
   },
   typeSelector: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    margin: 20,
     borderRadius: 12,
     padding: 4,
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   typeButton: {
     flex: 1,
-    paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
     borderRadius: 8,
   },
   typeButtonActive: {
-    backgroundColor: '#007AFF',
-  },
-  incomeButtonActive: {
-    backgroundColor: '#34C759',
-  },
-  expenseButtonActive: {
-    backgroundColor: '#FF3B30',
-  },
-  typeButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#8E8E93',
-  },
-  typeButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  form: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    borderRadius: 16,
-    padding: 20,
-  },
-  formGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1C1C1E',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    height: 48,
-    fontSize: 16,
-    color: '#1C1C1E',
-    backgroundColor: '#FFFFFF',
-    textAlignVertical: 'center',
-    paddingTop: 0,
-    paddingBottom: 0,
-    includeFontPadding: false,
-  },
-  inputError: {
-    borderColor: '#FF3B30',
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  amountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  currencySymbol: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    paddingLeft: 16,
-  },
-  amountInput: {
-    flex: 1,
-    paddingHorizontal: 8,
-    height: 48,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    borderWidth: 0,
-    textAlignVertical: 'center',
-    paddingTop: 0,
-    paddingBottom: 0,
-    includeFontPadding: false,
-  },
-  categorySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-  },
-  selectedCategory: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  categoryIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  selectedCategoryText: {
-    fontSize: 16,
-    color: '#1C1C1E',
-  },
-  placeholderText: {
-    fontSize: 16,
-    color: '#8E8E93',
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  timeSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-  },
-  dateSelector: {
-    flex: 1.2,
-  },
-  timeOnlySelector: {
-    flex: 1,
-  },
-  timeText: {
-    fontSize: 16,
-    color: '#1C1C1E',
-  },
-  datePickerModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  datePickerModalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '50%',
-  },
-  datePickerModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  datePickerModalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1C1C1E',
-  },
-  datePickerCancelText: {
-    fontSize: 16,
-    color: '#8E8E93',
-  },
-  datePickerConfirmText: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  datePickerContent: {
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  dateTimePicker: {
-    width: '100%',
-    height: 200,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#FF3B30',
-    marginTop: 4,
-  },
-  footer: {
-    padding: 20,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
-  },
-  submitButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#C7C7CC',
-  },
-  submitButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  categoryModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  categoryModalContainer: {
-    backgroundColor: '#F2F2F7',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '60%',
-  },
-  categoryModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  categoryModalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1C1C1E',
-  },
-  categoryList: {
-    padding: 20,
-  },
-  categoryItem: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    margin: 8,
-    padding: 16,
-    borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
-  categoryName: {
+  typeButtonText: {
+    fontSize: 15,
+    fontWeight: '500',
+    marginLeft: 6,
+  },
+  amountCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 8,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  amountLabel: {
     fontSize: 14,
-    color: '#1C1C1E',
-    marginTop: 8,
+    color: '#636E72',
+    marginBottom: 8,
+  },
+  amountInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  currencySymbol: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#6C5CE7',
+    marginRight: 8,
+  },
+  amountInput: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2D3436',
+    minWidth: 100,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+    padding: 0,
+    margin: 0,
+    height: 40,
+    lineHeight: Platform.OS === 'android' ? 40 : undefined,
+    ...Platform.select({
+      android: {
+        textAlignVertical: 'center',
+        paddingVertical: 0,
+        marginTop: 4,
+      },
+    }),
+  },
+  categoryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2D3436',
+    marginBottom: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#636E72',
+    textAlign: 'center',
+    paddingVertical: 16,
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  categoryItem: {
+    width: '23%',
+    aspectRatio: 1,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  categoryIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  categoryName: {
+    fontSize: 11,
+    fontWeight: '500',
     textAlign: 'center',
   },
-  aiModalContainer: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  aiModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+  detailsCard: {
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  aiModalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1C1C1E',
-  },
-  placeholderView: {
-    width: 24,
-  },
-  aiModalContent: {
-    padding: 20,
-  },
-  aiModalDescription: {
-    fontSize: 14,
-    color: '#8E8E93',
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-  aiTextInput: {
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    fontSize: 16,
-    color: '#1C1C1E',
-    backgroundColor: '#FFFFFF',
-    height: 120,
-    textAlignVertical: 'top',
-    marginBottom: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  aiRecognizeButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
+  detailsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2D3436',
+    marginBottom: 12,
+  },
+  inputGroup: {
+    marginBottom: 12,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
     borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    color: '#2D3436',
+    textAlignVertical: 'top',
+    includeFontPadding: false,
+    minHeight: 60,
+  },
+  dateTimeInput: {
+    flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    borderRadius: 12,
+    padding: 12,
   },
-  aiRecognizeButtonDisabled: {
-    backgroundColor: '#C7C7CC',
+  dateTimeValue: {
+    flex: 1,
+    fontSize: 15,
+    color: '#2D3436',
+    fontWeight: '500',
+    marginLeft: 10,
+    marginRight: 8,
   },
-  aiRecognizeButtonText: {
-    fontSize: 16,
+  tagsSection: {
+    marginTop: 4,
+  },
+  tagsLabel: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#636E72',
+    marginBottom: 8,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  tagItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  tagText: {
+    fontSize: 13,
+    color: '#1976D2',
+    fontWeight: '500',
+  },
+  addTagButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    gap: 3,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+  },
+  addTagText: {
+    fontSize: 13,
+    color: '#6C5CE7',
+    fontWeight: '500',
+  },
+  tagInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 6,
+  },
+  tagInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    fontSize: 14,
+    color: '#2D3436',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+    padding: 0,
+    margin: 0,
+    height: 36,
+    lineHeight: Platform.OS === 'android' ? 36 : undefined,
+    ...Platform.select({
+      android: {
+        textAlignVertical: 'center',
+        paddingVertical: 0,
+        marginTop: 3,
+      },
+      ios: {
+        paddingVertical: 8,
+      },
+    }),
+  },
+  tagConfirmButton: {
+    backgroundColor: '#6C5CE7',
+    borderRadius: 6,
+    padding: 6,
+  },
+  tagCancelButton: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 6,
+    padding: 6,
+  },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    borderRadius: 12,
+    padding: 12,
+  },
+  dateText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#2D3436',
+    marginLeft: 8,
+  },
+  dateTimeRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
 });
 

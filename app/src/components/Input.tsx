@@ -177,6 +177,7 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
     justifyContent: 'center',
     textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   inputWithLeftIcon: {
     paddingLeft: 8,

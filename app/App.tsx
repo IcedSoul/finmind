@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, Platform } from 'react-native';
 import AppNavigator from '@/navigation';
 import { initDatabase } from '@/services/database';
+import '@/i18n';
 
 // Web平台polyfills
 if (Platform.OS === 'web') {

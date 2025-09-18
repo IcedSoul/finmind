@@ -1,0 +1,484 @@
+{
+  "welcome": {
+    "intro": {
+      "title": "Welcome to FinMind Financial Management App",
+      "haveAccount": "I have an account",
+      "createAccount": "Create Account"
+    },
+    "step1": {
+      "title": "Smart Financial Management",
+      "subtitle": "FinMind",
+      "description": "Complete management of your income and expenses with advanced features"
+    },
+    "step2": {
+      "title": "Analytical Reports",
+      "subtitle": "Accurate Statistics",
+      "description": "View detailed reports of your financial status"
+    },
+    "step3": {
+      "title": "Financial Planning",
+      "subtitle": "Goal Setting",
+      "description": "Set financial goals and track their progress"
+    },
+    "step4": {
+      "title": "High Security",
+      "subtitle": "Data Protection",
+      "description": "Complete security of your financial information with advanced encryption"
+    }
+  },
+  "language": {
+    "selection": {
+      "title": "Please select your language",
+      "english": "English",
+      "chinese": "中文"
+    }
+  },
+  "about": {
+    "aboutApp": "About FinMind App",
+    "aboutText1": "FinMind is a comprehensive financial management application designed to help you track expenses, manage budgets, and achieve your financial goals.",
+    "aboutText2": "Our mission is to make personal finance management simple, intuitive, and accessible to everyone.",
+    "appName": "FinMind",
+    "appSlogan": "Smart Financial Management Made Simple",
+    "build": "Build",
+    "copyright": "© 2023 FinMind. All rights reserved.",
+    "developmentTeam": "Development Team",
+    "instagram": "Instagram",
+    "legalTerms": "Legal Terms",
+    "linkedin": "LinkedIn",
+    "privacyPolicy": "Privacy Policy",
+    "privacyPolicyDescription": "Read our privacy policy to understand how we protect your data",
+    "rateApp": "Rate App",
+    "releaseDate": "Release Date",
+    "shareApp": "Share App",
+    "socialNetworks": "Social Networks",
+    "softwareLicenses": "Software Licenses",
+    "softwareLicensesDescription": "View third-party software licenses used in this app",
+    "teamMember1Name": "John Smith",
+    "teamMember1Role": "Lead Developer",
+    "teamMember2Name": "Sarah Johnson",
+    "teamMember2Role": "UI/UX Designer",
+    "teamMember3Name": "Mike Chen",
+    "teamMember3Role": "Backend Developer",
+    "telegram": "Telegram",
+    "termsOfService": "Terms of Service",
+    "termsOfServiceDescription": "Read our terms of service and user agreement",
+    "title": "About FinMind",
+    "version": "Version",
+    "website": "Website"
+  },
+  "backup": {
+    "actions": {
+      "export": {
+        "description": "Download data in various formats",
+        "title": "Export Data"
+      },
+      "manualBackup": {
+        "description": "Create instant data backup",
+        "title": "Manual Backup"
+      },
+      "restore": {
+        "description": "Restore data from latest backup",
+        "title": "Restore Data"
+      }
+    },
+    "export": {
+      "message": "Select the format for exporting data:",
+      "title": "Export Data"
+    },
+    "info": {
+      "description": "Automatic backup runs every night at 2:00 AM. Your data is protected with advanced encryption."
+    },
+    "manualBackup": {
+      "message": "Do you want to backup your data?",
+      "successMessage": "Backup completed successfully.",
+      "title": "Manual Backup"
+    },
+    "operations": {
+      "title": "Backup Operations"
+    },
+    "options": {
+      "autoBackup": {
+        "description": "Daily automatic data backup",
+        "title": "Auto Backup"
+      },
+      "cloudSync": {
+        "description": "Store data in the cloud",
+        "title": "Cloud Sync"
+      }
+    },
+    "restore": {
+      "message": "Do you want to restore data from the latest backup? This will replace current data.",
+      "successMessage": "Data restored successfully.",
+      "title": "Restore Data"
+    },
+    "settings": {
+      "title": "Backup Settings"
+    },
+    "status": {
+      "lastBackup": "Last Backup",
+      "secure": "Your data is secure",
+      "title": "Backup Status"
+    },
+    "storage": {
+      "mb": "MB",
+      "remaining": "Remaining",
+      "title": "Storage Space",
+      "used": "Used"
+    },
+    "title": "Backup & Sync"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "currency": "VND",
+    "email": "Email",
+    "error": "Error",
+    "login": "Login",
+    "password": "Password",
+    "register": "Register",
+    "start": "Start",
+    "success": "Success"
+  },
+  "dashboard": {
+    "addPayment": "Add Payment",
+    "beverage": "Beverage",
+    "cafe": "Cafe",
+    "month": "Month",
+    "paymentDisplay": "Payment Display",
+    "shopping": "Shopping",
+    "store": "Store",
+    "taxi": "Taxi",
+    "today": "Today",
+    "todayDate": "Today March 14, 2024",
+    "transport": "Transport",
+    "week": "Week"
+  },
+  "en-US": "English (US)",
+  "help": {
+    "contact": {
+      "email": {
+        "title": "Email Support"
+      },
+      "phone": {
+        "title": "Phone Contact"
+      },
+      "telegram": {
+        "title": "Telegram"
+      },
+      "website": {
+        "title": "Website"
+      }
+    },
+    "contactDescription": "If you need more help, please contact us through the following methods",
+    "contactSupport": "Contact Support",
+    "faq": {
+      "addExpense": {
+        "answer": "Click the plus button on the main page, select expense type, enter amount and description, then save.",
+        "question": "How to add a new expense?"
+      },
+      "backup": {
+        "answer": "Enable cloud sync feature in settings page to automatically backup your data.",
+        "question": "How to backup my data?"
+      },
+      "changePassword": {
+        "answer": "Go to Settings > Security > Change Password, enter your current password and new password, then confirm the change.",
+        "question": "How to change my password?"
+      },
+      "createCategory": {
+        "answer": "In the expense entry screen, tap on category field, then tap \"Add New Category\" to create a custom category.",
+        "question": "How to create a new expense category?"
+      },
+      "monthlyReport": {
+        "answer": "Monthly reports are automatically generated and can be viewed in the Statistics tab. You can also export them as PDF.",
+        "question": "How to view monthly reports?"
+      },
+      "notifications": {
+        "answer": "You can manage notification preferences in settings.",
+        "question": "How do I manage notifications?"
+      },
+      "title": "Frequently Asked Questions"
+    },
+    "quickAccess": "Quick Access",
+    "quickActions": {
+      "gettingStarted": {
+        "description": "Step-by-step tutorial on using the app",
+        "title": "Getting Started"
+      },
+      "reportBug": {
+        "description": "Report bugs or technical issues",
+        "title": "Report Bug"
+      },
+      "suggestFeature": {
+        "description": "Send ideas for app improvement",
+        "title": "Suggest Feature"
+      },
+      "tutorials": {
+        "description": "Watch instructional videos",
+        "title": "Video Tutorials"
+      }
+    },
+    "searchPlaceholder": "Search in help...",
+    "support247": {
+      "description": "Our support team is ready to answer your questions at all times.",
+      "title": "24/7 Support"
+    },
+    "title": "Help & Support"
+  },
+  "login": {
+    "appDescription": "Track your expenses and manage your finances",
+    "appName": "FinMind",
+    "appSubtitle": "Smart Financial Management",
+    "checkNetwork": "Please check your network connection",
+    "forgotPassword": "Forgot password?",
+    "invalidEmail": "Please enter a valid email address",
+    "loggingIn": "Logging in...",
+    "loginFailed": "Login failed",
+    "loginSuccess": "Login successful",
+    "noAccount": "Don't have an account?",
+    "or": "or",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "rememberMe": "Remember me",
+    "subtitle": "Please sign in to continue",
+    "welcome": "Welcome"
+  },
+  "notifications": {
+    "general": {
+      "bill_reminders": {
+        "description": "Get reminded about upcoming bills",
+        "title": "Bill Reminders"
+      },
+      "budget_alerts": {
+        "description": "Alert when approaching budget limits",
+        "title": "Budget Alerts"
+      },
+      "description": "Manage your notification preferences",
+      "goal_updates": {
+        "description": "Updates on your financial goals",
+        "title": "Goal Updates"
+      },
+      "promotions": {
+        "description": "Special offers and promotions",
+        "title": "Promotions"
+      },
+      "push_notifications": {
+        "description": "Receive important updates",
+        "title": "Push Notifications"
+      },
+      "security_alerts": {
+        "description": "Important security notifications",
+        "title": "Security Alerts"
+      },
+      "title": "General"
+    },
+    "timing": {
+      "dailyReport": "Daily Report",
+      "monthly_reports": {
+        "description": "Monthly financial summary",
+        "title": "Monthly Reports"
+      },
+      "sunday": "Sunday",
+      "title": "Timing",
+      "weeklyReport": "Weekly Report",
+      "weekly_reports": {
+        "description": "Weekly financial summary",
+        "title": "Weekly Reports"
+      }
+    },
+    "title": "Notifications"
+  },
+  "onboarding": {
+    "next": "Next",
+    "reports": {
+      "description": "Check your financial status with accurate charts",
+      "subtitle": "Complete charts and statistics",
+      "title": "Reports"
+    },
+    "skip": "Skip",
+    "start": "Get Started",
+    "transactions": {
+      "description": "Easily record all your transactions",
+      "subtitle": "Quick recording of income and expenses",
+      "title": "Record Transactions"
+    },
+    "welcome": {
+      "description": "Easy and smart management of your finances",
+      "subtitle": "To Financial Management App",
+      "title": "Welcome"
+    }
+  },
+  "register": {
+    "agreeTerms": "Please agree to terms and conditions",
+    "agreeWith": "I agree with",
+    "alreadyHaveAccount": "Already have an account?",
+    "and": "and",
+    "checkNetwork": "Please check your network connection",
+    "confirmPasswordPlaceholder": "Confirm Password",
+    "fullNamePlaceholder": "Full Name",
+    "invalidEmail": "Please enter a valid email address",
+    "or": "or",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "privacyPolicy": "Privacy Policy",
+    "registerFailed": "Registration failed",
+    "registerSuccess": "Registration successful",
+    "registering": "Registering...",
+    "subtitle": "Join us to start managing your finances",
+    "termsAndConditions": "Terms and Conditions",
+    "title": "Create Account"
+  },
+  "security": {
+    "accountManagement": "Account Management",
+    "autoLock": "Auto Lock",
+    "autoLockDescription": "Set app auto lock time",
+    "biometricLogin": "Biometric Login",
+    "biometricLoginDescription": "Use fingerprint or face recognition to login",
+    "changePassword": "Change Password",
+    "changePasswordAccountDescription": "Update your account password",
+    "changePasswordDescription": "Change password regularly to protect account security",
+    "connectedDevices": "Connected Devices",
+    "connectedDevicesDescription": "Manage connected devices",
+    "continue": "Continue",
+    "delete": "Delete",
+    "deleteAccount": "Delete Account",
+    "deleteAccountConfirmation": "Are you sure you want to delete your account? This action cannot be undone.",
+    "deleteAccountDescription": "Permanently delete your account and all data",
+    "loginHistory": "Login History",
+    "loginHistoryDescription": "View recent login records",
+    "loginNotifications": "Login Notifications",
+    "loginNotificationsDescription": "Receive notifications when new devices login",
+    "pinCode": "PIN Code",
+    "pinCodeDescription": "Set PIN code for quick app access",
+    "securitySettings": "Security Settings",
+    "securitySettingsDescription": "Manage your account security options",
+    "securityTip": "Security Tip",
+    "title": "Security & Privacy",
+    "twoFactorAuth": "Two-Factor Authentication",
+    "twoFactorAuthDescription": "Add an extra layer of security to your account"
+  },
+  "settings": {
+    "aboutApp": "About App",
+    "account": "Account",
+    "autoBackup": "Auto Backup",
+    "backupManagement": "Backup Management",
+    "backupSettings": "Backup Settings",
+    "backupSync": "Backup Sync",
+    "bankAccounts": "Bank Accounts",
+    "biometricAuth": "Biometric Authentication",
+    "cancel": "Cancel",
+    "contactSupport": "Contact Support",
+    "copyright": "© 2024 FinMind. All rights reserved.",
+    "currency": "Currency",
+    "darkMode": "Dark Mode",
+    "editPersonalInfo": "Edit Personal Info",
+    "enableDarkTheme": "Enable Dark Theme",
+    "fingerprintLogin": "Fingerprint Login",
+    "general": "General",
+    "help": "Help",
+    "howToUseApp": "How to Use App",
+    "language": "Language",
+    "logout": "Logout",
+    "logoutConfirmation": "Are you sure you want to logout?",
+    "manageBankAccounts": "Manage Bank Accounts",
+    "notifications": "Notifications",
+    "personalProfile": "Personal Profile",
+    "rateApp": "Rate App",
+    "receiveImportantNotifications": "Receive Important Notifications",
+    "saveToCloud": "Save to Cloud",
+    "security": "Security",
+    "securitySettings": "Security Settings",
+    "sendMessageToSupport": "Send Message to Support",
+    "support": "Support",
+    "title": "Settings",
+    "usd": "USD",
+    "userEmail": "User Email",
+    "userName": "User Name",
+    "version": "Version 1.0.0",
+    "yourOpinionMatters": "Your Opinion Matters"
+  },
+  "statistics": {
+    "balance": "Balance",
+    "categories": {
+      "entertainment": "Entertainment",
+      "food": "Food",
+      "shopping": "Shopping",
+      "transport": "Transport"
+    },
+    "expense": "Expense",
+    "expenseCategories": "Expense Categories",
+    "income": "Income",
+    "monthlyChart": "Monthly Chart",
+    "months": {
+      "april": "April",
+      "june": "June",
+      "march": "March",
+      "may": "May"
+    },
+    "thisMonthSummary": "This Month Summary",
+    "title": "Financial Statistics"
+  },
+  "tabBar": {
+    "home": "Home",
+    "settings": "Settings",
+    "statistics": "Statistics",
+    "transactions": "Transactions"
+  },
+  "welcome": {
+    "getStarted": "Get Started",
+    "next": "Next",
+    "skip": "Skip",
+    "intro": {
+      "title": "Welcome to FinMind",
+      "haveAccount": "I have an account",
+      "createAccount": "Create new account"
+    },
+    "step1": {
+      "description": "Learn the basics of managing your finances with our intuitive interface",
+      "subtitle": "Financial management made easy",
+      "title": "Welcome to FinMind"
+    },
+    "step2": {
+      "description": "Quickly add your income and expenses with just a few taps",
+      "subtitle": "Track every transaction",
+      "title": "Record Transactions"
+    },
+    "step3": {
+      "description": "Set budgets for different categories and monitor your spending habits",
+      "subtitle": "Stay within your limits",
+      "title": "Budget Management"
+    },
+    "step4": {
+      "description": "View detailed charts and reports to understand your financial patterns",
+      "subtitle": "Make informed decisions",
+      "title": "Financial Insights"
+    }
+  },
+  "window": "Window",
+  "addBill": {
+    "title": "Add Bill",
+    "amount": "Amount",
+    "amountPlaceholder": "Enter amount",
+    "description": "Description",
+    "descriptionPlaceholder": "Enter description",
+    "category": "Category",
+    "selectCategory": "Select Category",
+    "tags": "Tags",
+    "addTag": "Add Tag",
+    "customTag": "Custom Tag",
+    "enterTag": "Enter tag name",
+    "date": "Date",
+    "time": "Time",
+    "dateTime": "Date & Time",
+    "selectDate": "Select Date",
+    "selectTime": "Select Time",
+    "selectDateTime": "Select Date & Time",
+    "details": "Details",
+    "save": "Save",
+    "cancel": "Cancel",
+    "expense": "Expense",
+    "income": "Income",
+    "type": "Type",
+    "required": "This field is required",
+    "invalidAmount": "Please enter a valid amount",
+    "success": "Bill added successfully",
+    "error": "Failed to add bill"
+  }
+}

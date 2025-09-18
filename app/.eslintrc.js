@@ -10,6 +10,7 @@ module.exports = {
     'index.js',
     '.eslintrc.js',
     'web/polyfills.js',
+    'analyze_i18n_structure.js'
   ],
   rules: {
     'prettier/prettier': 'error',

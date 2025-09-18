@@ -2,36 +2,43 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
+  SafeAreaView,
+  Dimensions,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { useForm } from '@/hooks';
 import { validateEmail, validatePassword } from '@/utils';
-import { authService } from '@/services/authService';
+import { apiService } from '@/services/api';
+import { useAuthStore } from '@/store';
+import { CustomTextInput } from '@/components';
+
+const { width, height } = Dimensions.get('window');
 
 interface RegisterForm {
-  name: string;
+  fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
 }
 
-const RegisterScreen = () => {
+const RegisterScreen: React.FC = () => {
   const navigation = useNavigation();
-  const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation();
+  const { setCredentials } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { values, errors, touched, handleChange, handleBlur, validate } =
     useForm<RegisterForm>({
-      name: '',
+      fullName: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -43,212 +50,179 @@ const RegisterScreen = () => {
     }
 
     if (!validateEmail(values.email)) {
-      Alert.alert('错误', '请输入有效的邮箱地址');
+      Alert.alert(t('common.error'), t('register.invalidEmail'));
       return;
     }
 
     if (!validatePassword(values.password)) {
-      Alert.alert('错误', '密码长度至少6位');
+      Alert.alert(t('common.error'), t('register.passwordTooShort'));
       return;
     }
 
     if (values.password !== values.confirmPassword) {
-      Alert.alert('错误', '两次输入的密码不一致');
+      Alert.alert(t('common.error'), t('register.passwordMismatch'));
       return;
     }
 
-    if (values.name.trim().length < 2) {
-      Alert.alert('错误', '姓名至少2个字符');
+    if (!agreeTerms) {
+      Alert.alert(t('common.error'), t('register.agreeTerms'));
       return;
     }
 
     try {
       setIsLoading(true);
-      await authService.register({
-        name: values.name,
+      const result = await apiService.register({
+        name: values.fullName,
         email: values.email,
         password: values.password,
       });
 
-      Alert.alert('注册成功', '请登录您的账户', [
-        { text: '确定', onPress: () => navigation.goBack() },
-      ]);
+      await setCredentials(
+        result.user,
+        result.access_token,
+        result.refresh_token,
+      );
+      Alert.alert(t('common.success'), t('register.registerSuccess'));
     } catch (registerError: any) {
-      Alert.alert('注册失败', registerError.message || '请检查网络连接');
+      Alert.alert(t('register.registerFailed'), registerError.message || t('register.checkNetwork'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const navigateToLogin = () => {
-    navigation.goBack();
+  const handleLogin = () => {
+    navigation.navigate('Login' as never);
+  };
+
+  const handleSocialRegister = (provider: string) => {
+    console.log(`Register with ${provider}`);
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={navigateToLogin}>
-            <Icon name="arrow-left" size={24} color="#007AFF" />
-          </TouchableOpacity>
-          <Text style={styles.title}>创建账户</Text>
-          <Text style={styles.subtitle}>加入 FinMind 开始智能记账</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={handleLogin}>
+          <Icon name="arrow-left" size={24} color="#2D3436" />
+        </TouchableOpacity>
+        <View style={styles.profileContainer}>
+          <View style={styles.profileCircle}>
+            <Icon name="user-plus" size={32} color="#FFFFFF" />
+          </View>
         </View>
+        <Text style={styles.title}>{t('register.title')}</Text>
+      </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Icon
-              name="user"
-              size={20}
-              color="#8E8E93"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={[
-                styles.input,
-                touched.name && errors.name ? styles.inputError : null,
-              ]}
-              placeholder="姓名"
-              placeholderTextColor="#C7C7CC"
-              value={values.name}
-              onChangeText={text => handleChange('name', text)}
-              onBlur={() => handleBlur('name')}
-              autoCapitalize="words"
-              autoCorrect={false}
-            />
+      <View style={styles.form}>
+        <Text style={styles.subtitle}>{t('register.subtitle')}</Text>
+
+        <CustomTextInput
+          leftIcon="user"
+          placeholder={t('register.fullNamePlaceholder')}
+          value={values.fullName}
+          onChangeText={text => handleChange('fullName', text)}
+          onBlur={() => handleBlur('fullName')}
+          autoCapitalize="words"
+          autoCorrect={false}
+          containerStyle={[
+            touched.fullName && errors.fullName ? styles.inputError : null,
+          ]}
+        />
+        {touched.fullName && errors.fullName && (
+          <Text style={styles.errorText}>{errors.fullName}</Text>
+        )}
+
+        <CustomTextInput
+          leftIcon="mail"
+          placeholder={t('common.email')}
+          value={values.email}
+          onChangeText={text => handleChange('email', text)}
+          onBlur={() => handleBlur('email')}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          containerStyle={[
+            touched.email && errors.email ? styles.inputError : null,
+          ]}
+        />
+        {touched.email && errors.email && (
+          <Text style={styles.errorText}>{errors.email}</Text>
+        )}
+
+        <CustomTextInput
+          leftIcon="lock"
+          rightIcon={showPassword ? 'eye-off' : 'eye'}
+          onRightIconPress={() => setShowPassword(!showPassword)}
+          placeholder={t('common.password')}
+          value={values.password}
+          onChangeText={text => handleChange('password', text)}
+          onBlur={() => handleBlur('password')}
+          secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          autoCorrect={false}
+          containerStyle={[
+            touched.password && errors.password ? styles.inputError : null,
+          ]}
+        />
+        {touched.password && errors.password && (
+          <Text style={styles.errorText}>{errors.password}</Text>
+        )}
+
+        <CustomTextInput
+          leftIcon="lock"
+          rightIcon={showConfirmPassword ? 'eye-off' : 'eye'}
+          onRightIconPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          placeholder={t('register.confirmPasswordPlaceholder')}
+          value={values.confirmPassword}
+          onChangeText={text => handleChange('confirmPassword', text)}
+          onBlur={() => handleBlur('confirmPassword')}
+          secureTextEntry={!showConfirmPassword}
+          autoCapitalize="none"
+          autoCorrect={false}
+          containerStyle={[
+            touched.confirmPassword && errors.confirmPassword ? styles.inputError : null,
+          ]}
+        />
+        {touched.confirmPassword && errors.confirmPassword && (
+          <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+        )}
+
+        <TouchableOpacity
+          style={styles.termsContainer}
+          onPress={() => setAgreeTerms(!agreeTerms)}
+        >
+          <View style={[styles.checkbox, agreeTerms && styles.checkboxActive]}>
+            {agreeTerms && <Icon name="check" size={12} color="#FFFFFF" />}
           </View>
-          {touched.name && errors.name && (
-            <Text style={styles.errorText}>{errors.name}</Text>
-          )}
+          <Text style={styles.termsText}>
+            {t('register.agreeWith')} <Text style={styles.termsLink}>{t('register.termsAndConditions')}</Text>
+          </Text>
+        </TouchableOpacity>
 
-          <View style={styles.inputContainer}>
-            <Icon
-              name="mail"
-              size={20}
-              color="#8E8E93"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={[
-                styles.input,
-                touched.email && errors.email ? styles.inputError : null,
-              ]}
-              placeholder="邮箱地址"
-              placeholderTextColor="#C7C7CC"
-              value={values.email}
-              onChangeText={text => handleChange('email', text)}
-              onBlur={() => handleBlur('email')}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-          {touched.email && errors.email && (
-            <Text style={styles.errorText}>{errors.email}</Text>
-          )}
-
-          <View style={styles.inputContainer}>
-            <Icon
-              name="lock"
-              size={20}
-              color="#8E8E93"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={[
-                styles.input,
-                touched.password && errors.password ? styles.inputError : null,
-              ]}
-              placeholder="密码"
-              placeholderTextColor="#C7C7CC"
-              value={values.password}
-              onChangeText={text => handleChange('password', text)}
-              onBlur={() => handleBlur('password')}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Icon
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={20}
-                color="#8E8E93"
-              />
-            </TouchableOpacity>
-          </View>
-          {touched.password && errors.password && (
-            <Text style={styles.errorText}>{errors.password}</Text>
-          )}
-
-          <View style={styles.inputContainer}>
-            <Icon
-              name="lock"
-              size={20}
-              color="#8E8E93"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={[
-                styles.input,
-                touched.confirmPassword && errors.confirmPassword
-                  ? styles.inputError
-                  : null,
-              ]}
-              placeholder="确认密码"
-              placeholderTextColor="#C7C7CC"
-              value={values.confirmPassword}
-              onChangeText={text => handleChange('confirmPassword', text)}
-              onBlur={() => handleBlur('confirmPassword')}
-              secureTextEntry={!showConfirmPassword}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              <Icon
-                name={showConfirmPassword ? 'eye-off' : 'eye'}
-                size={20}
-                color="#8E8E93"
-              />
-            </TouchableOpacity>
-          </View>
-          {touched.confirmPassword && errors.confirmPassword && (
-            <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-          )}
-
-          <TouchableOpacity
-            style={[
-              styles.registerButton,
-              isLoading && styles.registerButtonDisabled,
-            ]}
-            onPress={handleRegister}
-            disabled={isLoading}
+        <TouchableOpacity 
+          style={[isLoading && styles.registerButtonDisabled]} 
+          onPress={handleRegister}
+          disabled={isLoading}
+        >
+          <LinearGradient
+            colors={isLoading ? ['#C7C7CC', '#C7C7CC'] : ['#B990F8', '#9B94F3']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.registerButton}
           >
             <Text style={styles.registerButtonText}>
-              {isLoading ? '注册中...' : '注册'}
+              {isLoading ? t('register.registering') : t('common.register')}
             </Text>
-          </TouchableOpacity>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>已有账号？</Text>
-            <TouchableOpacity onPress={navigateToLogin}>
-              <Text style={styles.linkText}>立即登录</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <View style={styles.footer}>
+         <Text style={styles.footerText}>{t('register.alreadyHaveAccount')} </Text>
+         <TouchableOpacity onPress={handleLogin}>
+           <Text style={styles.footerLink}>{t('common.login')}</Text>
+         </TouchableOpacity>
+       </View>
+    </SafeAreaView>
   );
 };
 
@@ -256,102 +230,128 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    padding: 24,
-    paddingTop: 60,
+    height: height,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    paddingTop: 40,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
     position: 'relative',
   },
   backButton: {
     position: 'absolute',
-    left: 0,
-    top: 0,
-    padding: 8,
+    top: 40,
+    left: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  profileContainer: {
+    marginBottom: 16,
+  },
+  profileCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#6C5CE7',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1C1C1E',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8E8E93',
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#2D3436',
     textAlign: 'center',
   },
   form: {
-    width: '100%',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F7',
-    borderRadius: 12,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    height: 50,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
     flex: 1,
-    fontSize: 16,
-    color: '#1C1C1E',
-    height: '100%',
-    paddingVertical: 0,
+    paddingHorizontal: 24,
     justifyContent: 'center',
-    textAlignVertical: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#636E72',
+    marginBottom: 32,
+    textAlign: 'center',
   },
   inputError: {
     borderWidth: 1,
     borderColor: '#FF3B30',
   },
-  eyeIcon: {
-    padding: 4,
-  },
   errorText: {
     color: '#FF3B30',
-    fontSize: 14,
+    fontSize: 12,
+    marginTop: 4,
     marginBottom: 16,
     marginLeft: 4,
   },
-  registerButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    height: 50,
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 16,
+    marginBottom: 32,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#DDD',
+    marginRight: 12,
+    marginTop: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+  },
+  checkboxActive: {
+    backgroundColor: '#6C5CE7',
+    borderColor: '#6C5CE7',
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#636E72',
+    lineHeight: 20,
+  },
+  termsLink: {
+    color: '#6C5CE7',
+    fontWeight: '500',
+  },
+  registerButton: {
+    borderRadius: 12,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 24,
   },
-  registerButtonDisabled: {
-    backgroundColor: '#C7C7CC',
-  },
   registerButtonText: {
-    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: 'Shabnam',
+  },
+  registerButtonDisabled: {
+    opacity: 0.6,
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    paddingBottom: 40,
+    paddingHorizontal: 24,
   },
   footerText: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginRight: 4,
+    fontSize: 16,
+    color: '#636E72',
   },
-  linkText: {
-    fontSize: 14,
-    color: '#007AFF',
-    fontWeight: '500',
+  footerLink: {
+    fontSize: 16,
+    color: '#6C5CE7',
+    fontWeight: '700',
+    fontFamily: 'Shabnam',
   },
 });
 
