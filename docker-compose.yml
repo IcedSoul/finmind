@@ -27,17 +27,6 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes
 
-  adminer:
-    image: adminer:latest
-    container_name: finmind-adminer
-    ports:
-      - "8089:8080"
-    networks:
-      - finmind-network
-    restart: unless-stopped
-    depends_on:
-      - postgres
-
 volumes:
   postgres_data:
   redis_data:
